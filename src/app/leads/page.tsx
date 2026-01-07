@@ -21,7 +21,7 @@ const COLUMNS = [
 ]
 
 export default function LeadsPage() {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [items, setItems] = useState<Lead[]>([])
     const [activeId, setActiveId] = useState<string | null>(null)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
@@ -32,12 +32,20 @@ export default function LeadsPage() {
 
     useEffect(() => {
         fetchLeads()
-    }, [selectedStore])
+    }, [selectedStore, profile])
 
     const fetchLeads = async () => {
         setLoading(true)
+        const targetStoreId = selectedStore?.id || profile?.store_id
+
+        if (!targetStoreId && profile?.role !== 'super_admin') {
+            setItems([])
+            setLoading(false)
+            return
+        }
+
         try {
-            const data = await leadService.getAll(selectedStore?.id)
+            const data = await leadService.getAll(targetStoreId)
             setItems(data)
         } finally {
             setLoading(false)
