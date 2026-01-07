@@ -55,6 +55,7 @@ export async function GET(request: Request) {
     // 4. Process Loop
     for (const appt of appointments) {
         const client = appt.client as any
+        const professional = appt.professional as any // Fix for TS array inference
 
         // Skip if already sent (unless we force it, let's respect the flag)
         if (appt.reminder_sent) {
@@ -64,7 +65,9 @@ export async function GET(request: Request) {
 
         if (client && client.email) {
             // --- SIMULATION ---
-            const logEntry = `[MOCK EMAIL] To: ${client.email} | Subject: Lembrete de Consulta | Body: Olá ${client.name}, seu agendamento com ${appt.professional.name} é amanhã (${format(tomorrow, 'dd/MM')}).`
+            // Handle both array (if inferred wrong) or object
+            const profName = Array.isArray(professional) ? professional[0]?.name : professional?.name
+            const logEntry = `[MOCK EMAIL] To: ${client.email} | Subject: Lembrete de Consulta | Body: Olá ${client.name}, seu agendamento com ${profName} é amanhã (${format(tomorrow, 'dd/MM')}).`
             console.log(logEntry)
             logs.push(logEntry)
 
