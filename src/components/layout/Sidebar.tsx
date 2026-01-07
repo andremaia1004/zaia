@@ -7,6 +7,7 @@ import { clsx } from 'clsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { ThemeToggle } from '../ui/ThemeToggle'
 
 const adminNavItems = [
     { name: 'Command Center', href: '/admin', icon: Shield },
@@ -42,14 +43,21 @@ export function Sidebar() {
         }
     }, [profile])
 
+    import { ThemeToggle } from '../ui/ThemeToggle'
+
+    // ... existing code ...
+
     return (
         <aside className="w-64 h-screen fixed left-0 top-0 glass-panel border-r border-white/10 rounded-none z-50 flex flex-col">
             <div className="p-6">
-                <Link href="/dashboard">
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zaia-400 to-pink-400 font-display cursor-pointer bg-300% animate-gradient">
-                        ZAIA 2.0
-                    </h1>
-                </Link>
+                <div className="flex items-center justify-between mb-2">
+                    <Link href="/dashboard">
+                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zaia-400 to-pink-400 font-display cursor-pointer bg-300% animate-gradient">
+                            ZAIA 2.0
+                        </h1>
+                    </Link>
+                    <ThemeToggle />
+                </div>
 
                 {/* Super Admin Store Selector */}
                 {profile?.role === 'super_admin' && (

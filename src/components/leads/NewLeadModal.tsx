@@ -21,13 +21,11 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
     const [formData, setFormData] = useState({
         name: '',
         phone: '',
-        email: '',
         channel: 'Whatsapp',
         interest: '',
         notes: '',
         scheduleAppointment: false,
-        appointmentDate: '',
-        appointmentTime: ''
+        appointmentDate: ''
     })
 
     const handleChange = (field: string, value: any) => {
@@ -47,48 +45,53 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             const supabase = createClient()
 
             // 1. Create or Find Client
-            // Check if client exists by phone to avoid duplicates (optional, strictly speaking we should just try insert)
-            // For simplicity, let's assume we create a new client or rely on strict constraints if any.
-            // But usually we want to reuse. Let's do a quick check? No, let's keep it simple: Create Client.
+            // First check if client exists by phone
+            let clientId = ''
 
-            const { data: client, error: clientError } = await supabase
+            const { data: existingClient } = await supabase
                 .from('clients')
-                .insert({
-                    name: formData.name,
-                    phone: formData.phone,
-                    email: formData.email,
-                    store_id: targetStoreId
-                })
-                .select()
+                .select('id')
+                .eq('phone', formData.phone)
+                .eq('store_id', targetStoreId)
                 .single()
 
-            if (clientError) throw new Error(`Erro ao criar cliente: ${clientError.message}`)
+            if (existingClient) {
+                clientId = existingClient.id
+            } else {
+                // Create new client
+                const { data: newClient, error: clientError } = await supabase
+                    .from('clients')
+                    .insert({
+                        name: formData.name,
+                        phone: formData.phone,
+                        store_id: targetStoreId
+                    })
+                    .select()
+                    .single()
+
+                if (clientError) throw new Error(`Erro ao criar cliente: ${clientError.message}`)
+                clientId = newClient.id
+            }
 
             // 2. Create Lead
             const { data: lead, error: leadError } = await leadService.create({
-                client_id: client.id,
+                client_id: clientId,
                 store_id: targetStoreId,
-                status: formData.scheduleAppointment ? 'AGENDADO' : 'Novo', // If scheduling, start as AGENDADO
+                status: formData.scheduleAppointment ? 'AGENDADO' : 'Novo',
                 channel: formData.channel,
                 interest: formData.interest,
                 notes: formData.notes
-            }) // leadService.create returns data or throws
+            })
 
             // 3. (Optional) Create Appointment
-            if (formData.scheduleAppointment && formData.appointmentDate && formData.appointmentTime) {
-                const dateTime = `${formData.appointmentDate}T${formData.appointmentTime}:00`
+            if (formData.scheduleAppointment && formData.appointmentDate) {
+                // Defaulting to 09:00 since user doesn't want to specify time
+                const dateTime = `${formData.appointmentDate}T09:00:00`
 
                 await appointmentService.create({
-                    client_id: client.id,
+                    client_id: clientId,
                     store_id: targetStoreId,
-                    date: dateTime, // Timestamp string
-                    // We don't have professional selection here yet. 
-                    // Let's either add it or default to something? Or make it optional?
-                    // Backend implies professional_id is checked?
-                    // For now, let's leave professional null if allowed, or pick first?
-                    // Let's assuming professional is optional or we can skip it for "Lead" appointments?
-                    // Actually, appointments usually need a professional. Let's add that field later if needed.
-                    // For MVP "Quick Schedule", let's assume "Unassigned" or handle backend nulls.
+                    date: dateTime,
                     status: 'AGENDADO',
                     notes: `Agendamento via Novo Lead. Interesse: ${formData.interest}`
                 })
@@ -98,8 +101,8 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             onSuccess()
             onClose()
             setFormData({
-                name: '', phone: '', email: '', channel: 'Whatsapp', interest: '', notes: '',
-                scheduleAppointment: false, appointmentDate: '', appointmentTime: ''
+                name: '', phone: '', channel: 'Whatsapp', interest: '', notes: '',
+                scheduleAppointment: false, appointmentDate: ''
             })
 
         } catch (error: any) {
@@ -134,17 +137,6 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                             onChange={e => handleChange('phone', e.target.value)}
                         />
                     </div>
-                </div>
-
-                <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase">Email</label>
-                    <input
-                        type="email"
-                        className="input-field w-full"
-                        placeholder="email@exemplo.com"
-                        value={formData.email}
-                        onChange={e => handleChange('email', e.target.value)}
-                    />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -204,7 +196,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                     </div>
 
                     {formData.scheduleAppointment && (
-                        <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
+                        <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-top-2">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-400 uppercase">Data</label>
                                 <input
@@ -213,16 +205,6 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                                     className="input-field w-full [&::-webkit-calendar-picker-indicator]:invert"
                                     value={formData.appointmentDate}
                                     onChange={e => handleChange('appointmentDate', e.target.value)}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Horário</label>
-                                <input
-                                    type="time"
-                                    required={formData.scheduleAppointment}
-                                    className="input-field w-full [&::-webkit-calendar-picker-indicator]:invert"
-                                    value={formData.appointmentTime}
-                                    onChange={e => handleChange('appointmentTime', e.target.value)}
                                 />
                             </div>
                         </div>

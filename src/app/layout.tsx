@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import AppWrapper from '@/components/layout/AppWrapper'
 import { Toaster } from 'sonner'
 
@@ -20,15 +21,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.variable} ${outfit.variable} font-sans bg-[#0f1014] text-slate-200 antialiased`}>
-        <AuthProvider>
-          <div className="flex min-h-screen">
-            <AppWrapper>
-              {children}
-            </AppWrapper>
-          </div>
-          <Toaster theme="dark" richColors />
-        </AuthProvider>
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-[var(--background)] text-[var(--foreground)] antialiased`}>
+        <ThemeProvider>
+          <AuthProvider>
+            <div className="flex min-h-screen">
+              <AppWrapper>
+                {children}
+              </AppWrapper>
+            </div>
+            <Toaster richColors />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )
