@@ -8,7 +8,7 @@ import { ptBR } from 'date-fns/locale'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
 
 export default function DashboardPage() {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [metrics, setMetrics] = useState({
         scheduled: 0,
         attended: 0,
@@ -30,14 +30,15 @@ export default function DashboardPage() {
 
     useEffect(() => {
         fetchMetrics()
-    }, [dateRange, selectedStore])
+    }, [dateRange, selectedStore, profile])
 
     const fetchMetrics = async () => {
         setLoading(true)
         const { start, end } = dateRange
 
         try {
-            const data = await appointmentService.getByDateRange(start, end, selectedStore?.id)
+            const targetStoreId = selectedStore?.id || profile?.store_id
+            const data = await appointmentService.getByDateRange(start, end, targetStoreId)
 
             // 1. Calculate KPIs (Same logic, new range)
             const scheduled = data.filter(a => a.status === 'AGENDADO').length
