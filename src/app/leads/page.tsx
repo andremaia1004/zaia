@@ -8,17 +8,17 @@ import { type Lead } from '@/services/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppointmentModal } from '@/components/agenda/AppointmentModal'
 import { LeadDetailsModal } from '@/components/leads/LeadDetailsModal'
+import { NewLeadModal } from '@/components/leads/NewLeadModal'
 import { Plus, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-// Updated Columns to match Agenda Statuses
 const COLUMNS = [
-    { id: 'Novo', title: 'Novos Leads' }, // Keep logic for incoming
+    { id: 'NOVO', title: 'Novo' },
+    { id: 'CONTATADO', title: 'Contatado' },
     { id: 'AGENDADO', title: 'Agendado' },
-    { id: 'COMPARECEU', title: 'Compareceu' },
-    { id: 'FALTOU', title: 'Faltou' },
-    { id: 'CANCELADO', title: 'Cancelado' }
-]
+    { id: 'QUALIFICADO', title: 'Qualificado' },
+    { id: 'PERDIDO', title: 'Perdido' },
+];
 
 export default function LeadsPage() {
     const { selectedStore, profile } = useAuth()
@@ -26,6 +26,7 @@ export default function LeadsPage() {
     const [activeId, setActiveId] = useState<string | null>(null)
     const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false)
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+    const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false)
 
     const [convertingLead, setConvertingLead] = useState<Lead | null>(null)
     const [loading, setLoading] = useState(true)
@@ -109,7 +110,10 @@ export default function LeadsPage() {
         <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold font-display text-white">Pipeline de Leads</h1>
-                <button className="btn-primary flex items-center gap-2">
+                <button
+                    onClick={() => setIsNewLeadModalOpen(true)}
+                    className="btn-primary flex items-center gap-2"
+                >
                     <Plus className="w-4 h-4" /> Novo Lead
                 </button>
             </div>
@@ -193,6 +197,12 @@ export default function LeadsPage() {
                     fetchLeads()
                     toast.success('Lead excluído com sucesso')
                 }}
+            />
+
+            <NewLeadModal
+                isOpen={isNewLeadModalOpen}
+                onClose={() => setIsNewLeadModalOpen(false)}
+                onSuccess={fetchLeads}
             />
         </div>
     )

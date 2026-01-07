@@ -20,6 +20,7 @@ export interface Lead {
     reminder_sent?: boolean
     tasks?: LeadTask[]
     store_id?: string
+    notes?: string
 }
 
 export interface LeadTask {
