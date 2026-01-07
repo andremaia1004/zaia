@@ -211,7 +211,7 @@ export default function AdminDashboard() {
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
-                                    formatter={(val: number | string | Array<number | string>) => {
+                                    formatter={(val: any) => {
                                         const value = Number(val);
                                         return !isNaN(value)
                                             ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -283,7 +283,7 @@ export default function AdminDashboard() {
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
-                                    formatter={(val: number) => [val.toFixed(1) + '%', 'Taxa de Faltas']}
+                                    formatter={(val: any) => [Number(val).toFixed(1) + '%', 'Taxa de Faltas']}
                                 />
                                 <Bar dataKey="missedRate" name="Absenteísmo" radius={[4, 4, 0, 0]} fill="#ef4444" barSize={40} />
                             </BarChart>
