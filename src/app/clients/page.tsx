@@ -13,7 +13,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [clients, setClients] = useState<Client[]>([])
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedTerm, setDebouncedTerm] = useState('')
@@ -27,9 +27,16 @@ export default function ClientsPage() {
 
     useEffect(() => {
         searchClients()
-    }, [debouncedTerm, selectedStore])
+    }, [debouncedTerm, selectedStore, profile])
 
     const searchClients = async () => {
+        const targetStoreId = selectedStore?.id || profile?.store_id
+
+        if (!targetStoreId && profile?.role !== 'super_admin') {
+            setClients([])
+            return
+        }
+
         const supabase = createClient()
         let query = supabase.from('clients').select('*').order('created_at', { ascending: false }).limit(20)
 
@@ -37,8 +44,8 @@ export default function ClientsPage() {
             query = query.or(`name.ilike.%${debouncedTerm}%,phone.ilike.%${debouncedTerm}%`)
         }
 
-        if (selectedStore?.id) {
-            query = query.eq('store_id', selectedStore.id)
+        if (targetStoreId) {
+            query = query.eq('store_id', targetStoreId)
         }
 
         const { data } = await query

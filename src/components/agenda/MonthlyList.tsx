@@ -10,7 +10,7 @@ import { AppointmentDetailsModal } from '@/components/agenda/AppointmentDetailsM
 import { CalendarX2, Calendar, Loader2 } from 'lucide-react'
 
 export function MonthlyList({ currentDate }: { currentDate: Date }) {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
@@ -20,15 +20,24 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
 
     useEffect(() => {
         fetchAppointments()
-    }, [currentDate, selectedStore])
+    }, [currentDate, selectedStore, profile])
 
     const fetchAppointments = async () => {
         setLoading(true)
         const startDate = format(start, 'yyyy-MM-dd')
         const endDate = format(end, 'yyyy-MM-dd')
 
+        const targetStoreId = selectedStore?.id || profile?.store_id
+
+        // Prevent fetching if no store context (unless super admin viewing all? No, we want filtered views)
+        if (!targetStoreId && profile?.role !== 'super_admin') {
+            setAppointments([])
+            setLoading(false)
+            return
+        }
+
         try {
-            const data = await appointmentService.getByDateRange(startDate, endDate, selectedStore?.id)
+            const data = await appointmentService.getByDateRange(startDate, endDate, targetStoreId)
             setAppointments(data)
 
             // Update selectedAppointment with fresh data if it exists
