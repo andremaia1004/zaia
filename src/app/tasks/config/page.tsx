@@ -82,21 +82,31 @@ export default function ConfigTasksPage() {
 
         try {
             const supabase = createClient()
-            const { error } = await supabase
+            console.log('Sending assignment data:', newAssignment)
+            const { data, error } = await supabase
                 .from('task_assignments')
                 .insert(newAssignment)
+                .select()
 
-            if (error) throw error
+            if (error) {
+                console.error('Database error creating assignment:', error)
+                throw error
+            }
 
-            // Trigger task generation job
-            await fetch('/api/jobs/tasks?type=weekly', { method: 'POST' })
+            console.log('Assignment created successfully:', data)
+
+            // Trigger task generation job (non-blocking)
+            fetch('/api/jobs/tasks?type=weekly', { method: 'POST' })
+                .catch(err => console.error('Error triggering job:', err))
 
             setShowAssignModal(false)
             toast.success('Tarefa atribuída com sucesso!')
             fetchData()
+            setNewAssignment({ template_id: '', staff_id: '', store_id: '' })
         } catch (error: any) {
-            console.error('Error creating assignment:', error)
-            toast.error(`Erro ao atribuir: ${error.message}`)
+            console.error('Failed to create assignment:', error)
+            const detail = error.details || error.message || 'Erro de permissão ou conexão'
+            toast.error(`Erro ao atribuir: ${detail}`)
         }
     }
 
@@ -159,7 +169,13 @@ export default function ConfigTasksPage() {
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Configurar Tarefas</h1>
                     <p className="text-slate-600 dark:text-slate-400">Gerencie modelos de métricas e atribuições para os colaboradores.</p>
                 </div>
-                <Button onClick={() => setShowAssignModal(true)} className="flex items-center gap-2">
+                <Button
+                    onClick={() => {
+                        setNewAssignment({ template_id: '', staff_id: '', store_id: '' })
+                        setShowAssignModal(true)
+                    }}
+                    className="flex items-center gap-2"
+                >
                     <Plus className="w-4 h-4" /> Atribuir Tarefa
                 </Button>
             </header>
