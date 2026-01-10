@@ -118,7 +118,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Nome *</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Nome *</label>
                         <input
                             required
                             className="input-field w-full"
@@ -128,7 +128,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-400 uppercase">WhatsApp *</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">WhatsApp *</label>
                         <input
                             required
                             className="input-field w-full"
@@ -141,7 +141,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Canal de Origem</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Canal de Origem</label>
                         <select
                             className="input-field w-full"
                             value={formData.channel}
@@ -155,7 +155,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                         </select>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-400 uppercase">Interesse</label>
+                        <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Interesse</label>
                         <input
                             className="input-field w-full"
                             placeholder="Ex: Lentes Multifocais"
@@ -166,7 +166,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                 </div>
 
                 <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-400 uppercase">Observações</label>
+                    <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Observações</label>
                     <textarea
                         className="input-field w-full h-18 resize-none"
                         placeholder="Detalhes adicionais..."
@@ -176,13 +176,13 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                 </div>
 
                 {/* Scheduling Toggle */}
-                <div className="p-4 bg-slate-800/50 rounded-xl border border-white/5 space-y-4">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formData.scheduleAppointment ? 'bg-zaia-500/20 text-zaia-300' : 'bg-slate-700/50 text-slate-500'}`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formData.scheduleAppointment ? 'bg-zaia-500/10 text-zaia-600 dark:text-zaia-300' : 'bg-slate-200 dark:bg-slate-700/50 text-slate-500'}`}>
                                 <Calendar className="w-4 h-4" />
                             </div>
-                            <span className="text-sm font-medium text-white">Agendar Visita Agora?</span>
+                            <span className="text-sm font-medium text-slate-900 dark:text-white">Agendar Visita Agora?</span>
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                             <input
@@ -198,11 +198,11 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                     {formData.scheduleAppointment && (
                         <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-top-2">
                             <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-400 uppercase">Data</label>
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Data</label>
                                 <input
                                     type="date"
                                     required={formData.scheduleAppointment}
-                                    className="input-field w-full [&::-webkit-calendar-picker-indicator]:invert"
+                                    className="input-field w-full dark:[&::-webkit-calendar-picker-indicator]:invert"
                                     value={formData.appointmentDate}
                                     onChange={e => handleChange('appointmentDate', e.target.value)}
                                 />

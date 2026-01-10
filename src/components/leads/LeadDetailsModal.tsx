@@ -48,17 +48,17 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
         <Modal isOpen={isOpen} onClose={onClose} title="Detalhes do Lead">
             <div className="space-y-6">
                 {/* Header with Avatar and Basic Info */}
-                <div className="flex items-center gap-4 border-b border-white/10 pb-6">
-                    <div className="w-16 h-16 rounded-full bg-zaia-600/20 flex items-center justify-center text-zaia-300 font-bold text-2xl border border-zaia-500/30">
+                <div className="flex items-center gap-4 border-b border-slate-100 dark:border-white/10 pb-6">
+                    <div className="w-16 h-16 rounded-full bg-zaia-500/10 dark:bg-zaia-600/20 flex items-center justify-center text-zaia-600 dark:text-zaia-300 font-bold text-2xl border border-zaia-500/20 dark:border-zaia-500/30">
                         {lead.client?.name?.charAt(0) || 'C'}
                     </div>
                     <div>
-                        <h3 className="text-xl font-bold text-white">{lead.client?.name}</h3>
-                        <div className="flex items-center gap-2 text-slate-400 mt-1">
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 border border-white/5 uppercase tracking-wider">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{lead.client?.name}</h3>
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mt-1">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/5 uppercase tracking-wider">
                                 {lead.channel || 'Geral'}
                             </span>
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 border border-white/5">
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/5">
                                 {lead.status}
                             </span>
                         </div>
@@ -67,13 +67,13 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
 
                 {/* Contact Info */}
                 <div className="grid gap-4">
-                    <div className="p-4 bg-slate-800/50 rounded-xl border border-white/5 space-y-3">
-                        <div className="flex items-center gap-3 text-slate-300">
-                            <Phone className="w-4 h-4 text-slate-500" />
+                    <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 space-y-3">
+                        <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                            <Phone className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                             <span>{lead.client?.phone || 'Sem telefone'}</span>
                         </div>
-                        <div className="flex items-center gap-3 text-slate-300">
-                            <Calendar className="w-4 h-4 text-slate-500" />
+                        <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
+                            <Calendar className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                             <span>Interesse: {lead.interest || 'Consulta Geral'}</span>
                         </div>
                     </div>
@@ -81,7 +81,7 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
 
                 {/* Checklist / To-Do */}
                 <div className="space-y-3 pt-2">
-                    <h4 className="text-sm font-medium text-slate-400 uppercase tracking-wider">Checklist de Ações</h4>
+                    <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Checklist de Ações</h4>
 
                     <div className="space-y-2">
                         {/* Render existing tasks or default 'Aviso' if empty */}
@@ -91,7 +91,7 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
                         ]).map((task, index) => (
                             <div
                                 key={task.id || index}
-                                className="flex items-center gap-3 p-3 bg-slate-800/50 rounded-lg border border-white/5 hover:bg-slate-800 transition-colors cursor-pointer group"
+                                className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-white/5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer group"
                                 onClick={async () => {
                                     if (!lead) return
 
@@ -118,10 +118,10 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
                                     }
                                 }}
                             >
-                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.completed ? 'bg-green-500 border-green-500 text-white' : 'border-slate-500 text-transparent'}`}>
+                                <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${task.completed ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 dark:border-slate-500 text-transparent'}`}>
                                     <Check className="w-3.5 h-3.5" />
                                 </div>
-                                <span className={task.completed ? 'text-green-300 line-through' : 'text-slate-300'}>
+                                <span className={task.completed ? 'text-green-600 dark:text-green-300 line-through' : 'text-slate-700 dark:text-slate-300'}>
                                     {task.text}
                                 </span>
                             </div>
@@ -134,7 +134,7 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
                                     id="new-task-input"
                                     type="text"
                                     placeholder="Adicionar nova tarefa..."
-                                    className="w-full input-field text-sm py-2 pl-3 pr-10 bg-slate-900/50 border-dashed border-slate-700 focus:border-zaia-500 rounded-lg"
+                                    className="w-full input-field text-sm py-2 pl-3 pr-10 bg-white dark:bg-slate-900/50 border-dashed border-slate-300 dark:border-slate-700 focus:border-zaia-500 rounded-lg text-slate-900 dark:text-white"
                                     onKeyDown={async (e) => {
                                         if (e.key === 'Enter') {
                                             const input = e.currentTarget
@@ -175,7 +175,7 @@ export function LeadDetailsModal({ isOpen, onClose, lead, onDelete }: LeadDetail
 
                     <button
                         onClick={onClose}
-                        className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl font-medium transition-all"
+                        className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl font-medium transition-all"
                     >
                         Fechar
                     </button>

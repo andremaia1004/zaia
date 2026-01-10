@@ -22,14 +22,14 @@
   --foreground: #0f172a;
 
   /* Glass Colors */
-  --glass-panel-bg: rgba(255, 255, 255, 0.7);
-  --glass-panel-border: rgba(226, 232, 240, 0.6);
-  --glass-card-bg: rgba(255, 255, 255, 0.6);
-  --glass-card-hover: rgba(255, 255, 255, 0.8);
-  --glass-card-border: rgba(226, 232, 240, 0.6);
+  --glass-panel-bg: rgba(255, 255, 255, 0.85);
+  --glass-panel-border: rgba(203, 213, 225, 0.8);
+  --glass-card-bg: rgba(255, 255, 255, 0.7);
+  --glass-card-hover: rgba(255, 255, 255, 0.9);
+  --glass-card-border: rgba(203, 213, 225, 0.7);
 
   /* Inputs */
-  --input-bg: rgba(255, 255, 255, 0.8);
+  --input-bg: #ffffff;
   --input-border: #cbd5e1;
 
   /* Gradient Overlays */
