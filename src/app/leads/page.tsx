@@ -109,7 +109,7 @@ export default function LeadsPage() {
     return (
         <div className="space-y-6 h-[calc(100vh-100px)] flex flex-col">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold font-display text-white">Pipeline de Leads</h1>
+                <h1 className="text-3xl font-bold font-display text-slate-900 dark:text-white">Pipeline de Leads</h1>
                 <button
                     onClick={() => setIsNewLeadModalOpen(true)}
                     className="btn-primary flex items-center gap-2"
@@ -131,10 +131,10 @@ export default function LeadsPage() {
                 ) : (
                     <div className="flex gap-4 min-w-full overflow-x-auto flex-1 pb-4">
                         {COLUMNS.map(col => (
-                            <div key={col.id} className="w-80 min-w-[320px] glass-panel flex flex-col h-full bg-slate-900/40 border border-white/5">
-                                <div className="p-4 border-b border-white/5 font-semibold text-slate-300 flex justify-between items-center">
+                            <div key={col.id} className="w-80 min-w-[320px] glass-panel flex flex-col h-full bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-white/5 shadow-sm">
+                                <div className="p-4 border-b border-slate-100 dark:border-white/5 font-semibold text-slate-900 dark:text-slate-300 flex justify-between items-center">
                                     {col.title}
-                                    <span className="text-xs bg-slate-800 px-2 py-0.5 rounded-full text-slate-500">
+                                    <span className="text-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-slate-600 dark:text-slate-500">
                                         {items.filter(i => i.status === col.id).length}
                                     </span>
                                 </div>
@@ -149,7 +149,7 @@ export default function LeadsPage() {
                                         />
                                     ))}
                                     {items.filter(i => i.status === col.id).length === 0 && (
-                                        <div className="h-20 border-2 border-dashed border-white/5 rounded-lg flex items-center justify-center text-slate-600 text-sm">
+                                        <div className="h-20 border-2 border-dashed border-slate-200 dark:border-white/5 rounded-lg flex items-center justify-center text-slate-400 dark:text-slate-600 text-sm">
                                             Arraste aqui
                                         </div>
                                     )}
@@ -160,8 +160,8 @@ export default function LeadsPage() {
                 )}
                 <DragOverlay>
                     {activeId ? (
-                        <div className="glass-card p-4 border-zaia-500/50 shadow-2xl cursor-grabbing rotate-2 scale-105">
-                            <span className="text-white font-medium">
+                        <div className="glass-card p-4 border-zaia-500/50 shadow-2xl cursor-grabbing rotate-2 scale-105 bg-white dark:bg-slate-800">
+                            <span className="text-slate-900 dark:text-white font-medium">
                                 {items.find(i => i.id === activeId)?.client?.name || 'Lead'}
                             </span>
                         </div>
@@ -234,20 +234,20 @@ function SortableItem({ id, item, onClick }: { id: string, item: Lead, onClick?:
             className="glass-card p-4 cursor-pointer active:cursor-grabbing hover:border-zaia-500/50 group"
         >
             <div className="flex flex-col gap-1">
-                <span className="text-white font-medium group-hover:text-zaia-300 transition-colors">
+                <span className="text-slate-900 dark:text-white font-medium group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">
                     {item.client?.name || 'Novo Lead'}
                 </span>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-slate-600 dark:text-slate-500">
                     {item.client?.phone || 'Sem telefone'}
                 </span>
                 <div className="mt-2 flex gap-2">
-                    <span className="text-[10px] uppercase tracking-wider bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/5">
                         {item.channel || 'Geral'}
                     </span>
                     {item.status && (
-                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded ${item.status === 'AGENDADO' ? 'bg-blue-900/30 text-blue-400' :
-                            item.status === 'COMPARECEU' ? 'bg-green-900/30 text-green-400' :
-                                'bg-slate-800 text-slate-400'
+                        <span className={`text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded border ${item.status === 'AGENDADO' ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 dark:text-blue-400' :
+                            item.status === 'COMPARECEU' ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400' :
+                                'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400'
                             }`}>
                             {item.status}
                         </span>

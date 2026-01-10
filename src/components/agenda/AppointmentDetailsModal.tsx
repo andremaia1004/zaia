@@ -147,7 +147,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                         {!isEditing ? (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/5"
+                                className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-white/5"
                             >
                                 <Pencil className="w-4 h-4" />
                             </button>
@@ -170,14 +170,14 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                         )}
                     </div>
 
-                    <h3 className="text-xl font-bold text-white pr-10">{appointment.client?.name}</h3>
-                    <p className="text-slate-400">{appointment.client?.phone}</p>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white pr-10">{appointment.client?.name}</h3>
+                    <p className="text-slate-600 dark:text-slate-400">{appointment.client?.phone}</p>
 
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
+                    <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-500">
                         {isEditing ? (
                             <input
                                 type="date"
-                                className="input-field py-1 text-sm w-auto"
+                                className="input-field py-1 text-sm w-auto text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                                 value={editForm.date}
                                 onChange={e => setEditForm({ ...editForm, date: e.target.value })}
                             />
@@ -191,7 +191,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                     {isEditing ? (
                         <div className="space-y-2 mt-2">
                             <select
-                                className="input-field py-1 text-sm text-white bg-slate-800 border-white/10"
+                                className="input-field py-1 text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                                 value={editForm.professional_id}
                                 onChange={e => setEditForm({ ...editForm, professional_id: e.target.value })}
                             >
@@ -201,7 +201,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                 ))}
                             </select>
                             <textarea
-                                className="input-field text-sm min-h-[60px]"
+                                className="input-field text-sm min-h-[60px] text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                                 value={editForm.notes}
                                 onChange={e => setEditForm({ ...editForm, notes: e.target.value })}
                                 placeholder="Observações..."
@@ -209,7 +209,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                         </div>
                     ) : (
                         appointment.notes && (
-                            <div className="bg-slate-800/50 p-3 rounded-lg text-sm text-slate-300 italic border border-white/5 mt-2">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg text-sm text-slate-600 dark:text-slate-300 italic border border-slate-100 dark:border-white/5 mt-2">
                                 "{appointment.notes}"
                             </div>
                         )
@@ -226,10 +226,10 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                     disabled={loading}
                                     onClick={() => handleStatusChange(status)}
                                     className={`px-3 py-1.5 rounded-lg text-sm transition-all border ${appointment.status === status && !showRescheduleInput
-                                        ? 'bg-zaia-600 border-zaia-500 text-white shadow-lg shadow-zaia-500/20'
+                                        ? 'bg-zaia-600 border-zaia-500 text-white shadow-lg shadow-zaia-600/20'
                                         : status === 'REMARCADO' && showRescheduleInput
-                                            ? 'bg-orange-500/20 border-orange-500 text-orange-300'
-                                            : 'bg-slate-800 border-white/5 text-slate-400 hover:bg-slate-700 hover:text-white'
+                                            ? 'bg-orange-500/20 border-orange-500 text-orange-600 dark:text-orange-300'
+                                            : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
                                         }`}
                                 >
                                     {status}
@@ -243,7 +243,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                 <div className="flex gap-2">
                                     <input
                                         type="date"
-                                        className="input-field text-white"
+                                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                                         value={rescheduleDate}
                                         onChange={e => setRescheduleDate(e.target.value)}
                                     />
@@ -267,8 +267,8 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                     disabled={loading}
                                     onClick={() => handleResultChange('COMPROU')}
                                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all border ${appointment.result === 'COMPROU'
-                                        ? 'bg-green-600/20 border-green-500 text-green-300'
-                                        : 'bg-slate-800 border-white/5 text-slate-400 hover:bg-green-600/10 hover:border-green-500/50 hover:text-green-300'
+                                        ? 'bg-green-600/20 border-green-500 text-green-600 dark:text-green-300'
+                                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-green-600/10 hover:border-green-500/50 hover:text-green-600 dark:hover:text-green-300'
                                         }`}
                                 >
                                     💵 Vendeu
@@ -277,8 +277,8 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                     disabled={loading}
                                     onClick={() => handleResultChange('NAO_COMPROU')}
                                     className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-all border ${appointment.result === 'NAO_COMPROU'
-                                        ? 'bg-red-600/20 border-red-500 text-red-300'
-                                        : 'bg-slate-800 border-white/5 text-slate-400 hover:bg-red-600/10 hover:border-red-500/50 hover:text-red-300'
+                                        ? 'bg-red-600/20 border-red-500 text-red-600 dark:text-red-300'
+                                        : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:bg-red-600/10 hover:border-red-500/50 hover:text-red-600 dark:hover:text-red-300'
                                         }`}
                                 >
                                     ❌ Não Vendeu
@@ -293,7 +293,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                             type="number"
                                             step="0.01"
                                             placeholder="0,00"
-                                            className="input-field text-white font-mono text-lg"
+                                            className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 font-mono text-lg"
                                             defaultValue={appointment.value}
                                             id="sales-value-input"
                                         />
@@ -326,7 +326,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                     <div className="space-y-2">
                                         <textarea
                                             placeholder="Por que o cliente não comprou?"
-                                            className="input-field text-white min-h-[80px]"
+                                            className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 min-h-[80px]"
                                             defaultValue={appointment.notes}
                                             id="rejection-reason-input"
                                         />
@@ -352,7 +352,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                 <div className="pt-4 flex justify-end">
                     <button
                         onClick={onClose}
-                        className="text-slate-500 hover:text-white text-sm"
+                        className="text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-white text-sm"
                     >
                         Fechar
                     </button>

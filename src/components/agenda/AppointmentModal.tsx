@@ -137,18 +137,18 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                        <label className="text-sm text-slate-400">Data da Consulta</label>
+                        <label className="text-sm text-slate-500 dark:text-slate-400">Data da Consulta</label>
                         <input
                             type="date"
-                            className="input-field text-white"
+                            className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                             {...register('date')}
                         />
-                        {errors.date && <p className="text-xs text-red-400">{errors.date.message}</p>}
+                        {errors.date && <p className="text-xs text-red-500 underline">{errors.date.message}</p>}
                     </div>
                     <div className="space-y-1">
-                        <label className="text-sm text-slate-400">Origem</label>
+                        <label className="text-sm text-slate-500 dark:text-slate-400">Origem</label>
                         <select
-                            className="input-field text-white"
+                            className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                             {...register('origin')}
                         >
                             <option value="WhatsApp">WhatsApp</option>
@@ -156,14 +156,14 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                             <option value="Indicação">Indicação</option>
                             <option value="Passante">Passante</option>
                         </select>
-                        {errors.origin && <p className="text-xs text-red-400">{errors.origin.message}</p>}
+                        {errors.origin && <p className="text-xs text-red-500 underline">{errors.origin.message}</p>}
                     </div>
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-sm text-slate-400">Profissional</label>
+                    <label className="text-sm text-slate-500 dark:text-slate-400">Profissional</label>
                     <select
-                        className="input-field text-white"
+                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                         {...register('professional_id')}
                     >
                         <option value="">Selecione...</option>
@@ -171,46 +171,46 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                             <option key={p.id} value={p.id}>{p.name} - {p.role}</option>
                         ))}
                     </select>
-                    {errors.professional_id && <p className="text-xs text-red-400">{errors.professional_id.message}</p>}
+                    {errors.professional_id && <p className="text-xs text-red-500 underline">{errors.professional_id.message}</p>}
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-sm text-slate-400">Nome do Cliente</label>
+                    <label className="text-sm text-slate-500 dark:text-slate-400">Nome do Cliente</label>
                     <input
                         type="text"
-                        className="input-field text-white"
+                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                         placeholder="Nome completo"
                         {...register('client_name')}
                     />
-                    {errors.client_name && <p className="text-xs text-red-400">{errors.client_name.message}</p>}
+                    {errors.client_name && <p className="text-xs text-red-500 underline">{errors.client_name.message}</p>}
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-sm text-slate-400">Telefone</label>
+                    <label className="text-sm text-slate-500 dark:text-slate-400">Telefone</label>
                     <input
                         type="tel"
-                        className="input-field text-white"
+                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                         placeholder="(00) 00000-0000"
                         {...register('client_phone')}
                     />
-                    {errors.client_phone && <p className="text-xs text-red-400">{errors.client_phone.message}</p>}
+                    {errors.client_phone && <p className="text-xs text-red-500 underline">{errors.client_phone.message}</p>}
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-sm text-slate-400">Email (Opcional)</label>
+                    <label className="text-sm text-slate-500 dark:text-slate-400">Email (Opcional)</label>
                     <input
                         type="email"
-                        className="input-field text-white"
+                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                         placeholder="cliente@email.com"
                         {...register('client_email')}
                     />
-                    {errors.client_email && <p className="text-xs text-red-400">{errors.client_email.message}</p>}
+                    {errors.client_email && <p className="text-xs text-red-500 underline">{errors.client_email.message}</p>}
                 </div>
 
                 <div className="space-y-1">
-                    <label className="text-sm text-slate-400">Observações</label>
+                    <label className="text-sm text-slate-500 dark:text-slate-400">Observações</label>
                     <textarea
-                        className="input-field text-white min-h-[80px]"
+                        className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 min-h-[80px]"
                         {...register('notes')}
                     />
                 </div>
@@ -219,7 +219,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 rounded-lg text-slate-400 hover:bg-white/5 hover:text-white transition-colors"
+                        className="px-4 py-2 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
                         Cancelar
                     </button>

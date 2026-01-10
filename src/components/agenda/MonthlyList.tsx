@@ -91,14 +91,14 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
                         <div key={dateKey} className="relative pl-8 border-l border-zaia-500/20 pb-4 last:pb-0">
                             {/* Timeline dot */}
                             <div className={cn(
-                                "absolute -left-1.5 top-0 w-3 h-3 rounded-full ring-4 ring-slate-950",
-                                isToday ? "bg-zaia-500" : "bg-slate-700"
+                                "absolute -left-1.5 top-0 w-3 h-3 rounded-full ring-4 ring-white dark:ring-slate-950",
+                                isToday ? "bg-zaia-500" : "bg-slate-300 dark:bg-slate-700"
                             )} />
 
-                            <h3 className={cn("text-xl font-display font-semibold mb-4 capitalize flex items-center gap-3", isToday ? "text-zaia-300" : "text-slate-200")}>
+                            <h3 className={cn("text-xl font-display font-semibold mb-4 capitalize flex items-center gap-3", isToday ? "text-zaia-600 dark:text-zaia-300" : "text-slate-800 dark:text-slate-200")}>
                                 {format(dateObj, "dd 'de' MMMM", { locale: ptBR })}
                                 <span className="opacity-50 text-base font-normal">- {format(dateObj, 'EEEE', { locale: ptBR })}</span>
-                                {isToday && <span className="text-xs bg-zaia-600 text-white px-2 py-0.5 rounded-full font-sans">Hoje</span>}
+                                {isToday && <span className="text-xs bg-zaia-600 text-white px-2 py-0.5 rounded-full font-sans shadow-lg shadow-zaia-600/20">Hoje</span>}
                             </h3>
 
                             <div className="grid gap-3">
@@ -106,14 +106,14 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
                                     <div
                                         key={app.id}
                                         onClick={() => setSelectedAppointment(app)}
-                                        className="group relative flex items-center justify-between bg-slate-800/40 p-4 rounded-xl border border-white/5 hover:border-zaia-500/30 transition-all hover:bg-slate-800/80 cursor-pointer shadow-sm hover:translate-x-1"
+                                        className="group relative flex items-center justify-between bg-white dark:bg-slate-800/40 p-4 rounded-xl border border-slate-200 dark:border-white/5 hover:border-zaia-500/30 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 cursor-pointer shadow-sm hover:transform hover:translate-x-1"
                                     >
                                         <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-medium text-white text-lg group-hover:text-zaia-200 transition-colors">{app.client?.name || 'Cliente sem nome'}</span>
-                                                {app.origin && <span className="text-xs bg-slate-700/50 px-2 py-0.5 rounded text-slate-400 border border-white/5">{app.origin}</span>}
+                                                <span className="font-medium text-slate-900 dark:text-white text-lg group-hover:text-zaia-600 dark:group-hover:text-zaia-200 transition-colors">{app.client?.name || 'Cliente sem nome'}</span>
+                                                {app.origin && <span className="text-xs bg-slate-100 dark:bg-slate-700/50 px-2 py-0.5 rounded text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/5">{app.origin}</span>}
                                             </div>
-                                            <div className="flex items-center gap-2 text-sm text-slate-400">
+                                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
                                                 <span className="flex items-center gap-1">
                                                     📱 {app.client?.phone}
                                                 </span>
@@ -122,13 +122,13 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
 
                                         <div className="flex flex-col items-end gap-2">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">{app.professional?.name}</span>
+                                                <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{app.professional?.name}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <StatusBadge status={app.status} />
                                                 {app.result && app.result !== 'NAO_DEFINIDO' && (
                                                     <span className={cn("text-xs px-2 py-1 rounded border font-bold",
-                                                        app.result === 'COMPROU' ? "border-green-500/30 text-green-400 bg-green-500/10" : "border-red-500/30 text-red-400 bg-red-500/10"
+                                                        app.result === 'COMPROU' ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10" : "border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/10"
                                                     )}>
                                                         {app.result === 'COMPROU' ? 'VENDA' : 'SEM VENDA'}
                                                     </span>
@@ -160,11 +160,11 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
 
 function StatusBadge({ status }: { status: string }) {
     const styles: Record<string, string> = {
-        'AGENDADO': 'bg-blue-500/10 text-blue-300 border-blue-500/20',
-        'COMPARECEU': 'bg-green-500/10 text-green-300 border-green-500/20',
-        'FALTOU': 'bg-red-500/10 text-red-300 border-red-500/20',
-        'REMARCADO': 'bg-orange-500/10 text-orange-300 border-orange-500/20',
-        'CANCELADO': 'bg-slate-700/50 text-slate-500 border-slate-600/50 line-through',
+        'AGENDADO': 'bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20',
+        'COMPARECEU': 'bg-green-500/10 text-green-600 dark:text-green-300 border-green-500/20',
+        'FALTOU': 'bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20',
+        'REMARCADO': 'bg-orange-500/10 text-orange-600 dark:text-orange-300 border-orange-500/20',
+        'CANCELADO': 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-600/50 line-through',
     }
     return (
         <span className={cn("text-xs px-2.5 py-1 rounded-md border font-medium shadow-sm backdrop-blur-sm", styles[status] || styles['AGENDADO'])}>
