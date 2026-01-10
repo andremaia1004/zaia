@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User, CheckSquare } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -10,7 +10,7 @@ import Image from 'next/image'
 import { ThemeToggle } from '../ui/ThemeToggle'
 
 const adminNavItems = [
-    { name: 'Command Center', href: '/admin', icon: Shield },
+    { name: 'Painel Administrativo', href: '/admin', icon: Shield },
     { name: 'Profissionais', href: '/professionals', icon: Briefcase },
     { name: 'Configurações', href: '/settings', icon: Settings },
 ]
@@ -18,6 +18,7 @@ const adminNavItems = [
 const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Agenda', href: '/agenda', icon: Calendar },
+    { name: 'Tarefas', href: '/tasks/my-week', icon: CheckSquare },
     { name: 'Clientes', href: '/clients', icon: Users },
     { name: 'Profissionais', href: '/professionals', icon: Briefcase },
     { name: 'Pipeline', href: '/leads', icon: Layers },
@@ -42,10 +43,6 @@ export function Sidebar() {
             fetchStores()
         }
     }, [profile])
-
-    import { ThemeToggle } from '../ui/ThemeToggle'
-
-    // ... existing code ...
 
     return (
         <aside className="w-64 h-screen fixed left-0 top-0 glass-panel border-r border-white/10 rounded-none z-50 flex flex-col">
