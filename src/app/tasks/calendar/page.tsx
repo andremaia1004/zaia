@@ -19,7 +19,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Filter, Layers } f
 import { clsx } from 'clsx'
 
 export default function CalendarPage() {
-    const { profile } = useAuth()
+    const { profile, selectedStore } = useAuth()
     const [currentMonth, setCurrentMonth] = useState(new Date())
     const [occurrences, setOccurrences] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -33,7 +33,7 @@ export default function CalendarPage() {
 
     useEffect(() => {
         fetchOccurrences()
-    }, [currentMonth, profile])
+    }, [currentMonth, profile, selectedStore])
 
     const fetchOccurrences = async () => {
         try {
@@ -47,9 +47,12 @@ export default function CalendarPage() {
 
             if (profile?.role === 'staff') {
                 query = query.eq('staff_id', profile.id)
+            } else if (selectedStore?.id) {
+                query = query.eq('store_id', selectedStore.id)
             } else if (profile?.role === 'store_admin') {
                 query = query.eq('store_id', profile.store_id)
             }
+            /* If Super Admin but no selectedStore, fetch all (global view) */
 
             const { data, error } = await query
             if (error) throw error

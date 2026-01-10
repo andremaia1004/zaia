@@ -11,7 +11,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function ConfigTasksPage() {
-    const { profile } = useAuth()
+    const { profile, selectedStore } = useAuth()
     const [templates, setTemplates] = useState<any[]>([])
     const [staff, setStaff] = useState<any[]>([])
     const [stores, setStores] = useState<any[]>([])
@@ -24,7 +24,7 @@ export default function ConfigTasksPage() {
 
     useEffect(() => {
         fetchData()
-    }, [profile])
+    }, [profile, selectedStore])
 
     const fetchData = async () => {
         try {
@@ -39,10 +39,18 @@ export default function ConfigTasksPage() {
             setTemplates(templatesData || [])
 
             // 2. Staff (Profiles) - Fetch staff and store_admin since both can have tasks
-            const { data: profiles, error: profileError } = await supabase
+            let pQuery = supabase
                 .from('profiles')
                 .select('id, name, role, store_id')
                 .in('role', ['staff', 'store_admin'])
+
+            if (selectedStore?.id) {
+                pQuery = pQuery.eq('store_id', selectedStore.id)
+            } else if (profile?.role !== 'super_admin' && profile?.store_id) {
+                pQuery = pQuery.eq('store_id', profile.store_id)
+            }
+
+            const { data: profiles, error: profileError } = await pQuery
 
             if (profileError) {
                 console.error('Error fetching profiles:', profileError.message)
@@ -62,9 +70,25 @@ export default function ConfigTasksPage() {
             setStores(storesData || [])
 
             // 4. Assignments
-            const { data: assignmentsData } = await supabase
+            let aQuery = supabase
                 .from('task_assignments')
                 .select('*, task_templates(title, recurrence), profiles:staff_id(name), stores(name)')
+
+            if (selectedStore?.id) {
+                aQuery = aQuery.eq('store_id', selectedStore.id)
+            } else if (profile?.role !== 'super_admin' && profile?.store_id) {
+                aQuery = aQuery.eq('store_id', profile.store_id)
+            }
+
+            const { data: assignmentsData, error: aError } = await aQuery
+
+            if (aError) console.error('Error fetching assignments:', aError)
+            console.log('Fetched data:', {
+                templates: (templatesData || []).length,
+                staff: (profiles || []).length,
+                stores: (storesData || []).length,
+                assignments: (assignmentsData || []).length
+            })
             setAssignments(assignmentsData || [])
 
         } catch (error) {
