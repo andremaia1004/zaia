@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
             return await generateMonthlyOccurrences()
         } else if (type === 'scoring') {
             return await calculatePreviousWeekScores()
+        } else if (type === 'daily') {
+            return await cleanupDailyTasks()
         }
 
         return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
@@ -144,14 +146,8 @@ async function calculatePreviousWeekScores() {
     const weekStartStr = format(weekStart, 'yyyy-MM-dd')
     const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
 
-    // 0. Update past-due PENDENTE tasks to ATRASA
-    await supabaseAdmin
-        .from('task_occurrences')
-        .update({ status: 'ATRASA' })
-        .eq('status', 'PENDENTE')
-        .lt('due_at', new Date().toISOString())
-        .gte('date', weekStartStr)
-        .lte('date', weekEndStr)
+    // 0. Update past-due PENDENTE tasks to ATRASA (Safety net)
+    await cleanupDailyTasks()
     const { data: staffIds } = await supabaseAdmin
         .from('task_occurrences')
         .select('staff_id, store_id')
@@ -208,4 +204,21 @@ async function calculatePreviousWeekScores() {
     }
 
     return NextResponse.json({ success: true, count: scores.length })
+}
+
+async function cleanupDailyTasks() {
+    const now = new Date().toISOString()
+
+    // Mark as ATRASA if due_at is passed and status is PENDENTE
+    const { data, error } = await supabaseAdmin
+        .from('task_occurrences')
+        .update({ status: 'ATRASA' })
+        .eq('status', 'PENDENTE')
+        .lt('due_at', now)
+        .not('due_at', 'is', null)
+        .select()
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true, updated: data?.length || 0 })
 }
