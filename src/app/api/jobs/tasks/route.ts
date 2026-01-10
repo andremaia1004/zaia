@@ -26,41 +26,62 @@ async function generateWeeklyOccurrences() {
     const today = new Date()
     const weekStart = startOfWeek(today, { weekStartsOn: 1 })
     const weekEnd = endOfWeek(today, { weekStartsOn: 1 })
+    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
-    // 1. Get all active daily and weekly assignments
+    // 1. Get all active daily, weekly and once assignments
     const { data: assignments, error } = await supabaseAdmin
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value)
+            task_templates!inner(title, recurrence, target_value, default_due_time)
         `)
         .eq('active', true)
-        .in('task_templates.recurrence', ['daily', 'weekly'])
+        .in('task_templates.recurrence', ['daily', 'weekly', 'once'])
 
     if (error) throw error
 
-    const occurrences = []
-    const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd })
+    // Helper to format due_at
+    const withDueAt = (day: Date, time: string | null) => {
+        if (!time) return null
+        return `${format(day, 'yyyy-MM-dd')}T${time}`
+    }
+
+    const occurrences: any[] = []
 
     for (const assign of assignments) {
-        if (assign.task_templates.recurrence === 'daily') {
+        const template = assign.task_templates
+        if (template.recurrence === 'daily') {
             for (const day of weekDays) {
                 occurrences.push({
                     assignment_id: assign.id,
-                    title: assign.task_templates.title,
+                    title: template.title,
                     date: format(day, 'yyyy-MM-dd'),
-                    target_value: assign.task_templates.target_value,
+                    due_at: withDueAt(day, template.default_due_time),
+                    target_value: template.target_value,
                     staff_id: assign.staff_id,
                     store_id: assign.store_id,
                     status: 'PENDENTE'
                 })
             }
-        } else if (assign.task_templates.recurrence === 'weekly') {
+        } else if (template.recurrence === 'weekly') {
             occurrences.push({
                 assignment_id: assign.id,
-                title: assign.task_templates.title,
-                date: format(weekStart, 'yyyy-MM-dd'), // Weekly tasks attributed to start of week
-                target_value: assign.task_templates.target_value,
+                title: template.title,
+                date: format(weekStart, 'yyyy-MM-dd'),
+                due_at: withDueAt(weekStart, template.default_due_time),
+                target_value: template.target_value,
+                staff_id: assign.staff_id,
+                store_id: assign.store_id,
+                status: 'PENDENTE'
+            })
+        } else if (template.recurrence === 'once') {
+            // "once" tasks in weekly job are treated as "this week only" if not already created
+            occurrences.push({
+                assignment_id: assign.id,
+                title: template.title,
+                date: format(weekStart, 'yyyy-MM-dd'),
+                due_at: withDueAt(weekStart, template.default_due_time),
+                target_value: template.target_value,
                 staff_id: assign.staff_id,
                 store_id: assign.store_id,
                 status: 'PENDENTE'
@@ -87,7 +108,7 @@ async function generateMonthlyOccurrences() {
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value)
+            task_templates!inner(title, recurrence, target_value, default_due_time)
         `)
         .eq('active', true)
         .eq('task_templates.recurrence', 'monthly')
@@ -98,6 +119,7 @@ async function generateMonthlyOccurrences() {
         assignment_id: assign.id,
         title: assign.task_templates.title,
         date: format(monthStart, 'yyyy-MM-dd'),
+        due_at: assign.task_templates.default_due_time ? `${format(monthStart, 'yyyy-MM-dd')}T${assign.task_templates.default_due_time}` : null,
         target_value: assign.task_templates.target_value,
         staff_id: assign.staff_id,
         store_id: assign.store_id,
@@ -122,7 +144,14 @@ async function calculatePreviousWeekScores() {
     const weekStartStr = format(weekStart, 'yyyy-MM-dd')
     const weekEndStr = format(weekEnd, 'yyyy-MM-dd')
 
-    // Get all staff members who have tasks
+    // 0. Update past-due PENDENTE tasks to ATRASA
+    await supabaseAdmin
+        .from('task_occurrences')
+        .update({ status: 'ATRASA' })
+        .eq('status', 'PENDENTE')
+        .lt('due_at', new Date().toISOString())
+        .gte('date', weekStartStr)
+        .lte('date', weekEndStr)
     const { data: staffIds } = await supabaseAdmin
         .from('task_occurrences')
         .select('staff_id, store_id')
@@ -150,7 +179,7 @@ async function calculatePreviousWeekScores() {
         const postponed = tasks.filter(t => t.status === 'ADIADA').length
         const delayed = tasks.filter(t => t.status === 'ATRASA').length
         const total = tasks.length
-        const rate = (done / total) * 100
+        const rate = total > 0 ? (done / total) * 100 : 0
 
         // Bonus logic: "cumprir integralmente as metas diárias da semana e metas mensais dentro do mês"
         // Simplified for weekly score: all weekly tasks done.

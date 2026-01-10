@@ -13,9 +13,22 @@ export interface TaskOccurrence {
     postponed_reason?: string
     proof_url?: string
     proof_description?: string
+    due_at?: string // ISO string
     staff_id: string
     store_id: string
     requires_proof?: boolean
+    default_due_time?: string
+}
+
+export interface TaskTemplate {
+    id: string
+    title: string
+    description?: string
+    recurrence: string
+    target_value: number
+    requires_proof: boolean
+    default_due_time?: string
+    created_at: string
 }
 
 export const tasksService = {
@@ -26,7 +39,7 @@ export const tasksService = {
             .select(`
                 *,
                 assignment:assignment_id(
-                    template:template_id(requires_proof)
+                    template:template_id(requires_proof, default_due_time)
                 )
             `)
             .eq('staff_id', staffId)
@@ -39,7 +52,8 @@ export const tasksService = {
         // Flatten the joined data
         return (data as any[]).map(occ => ({
             ...occ,
-            requires_proof: occ.assignment?.template?.requires_proof || false
+            requires_proof: occ.assignment?.template?.requires_proof || false,
+            default_due_time: occ.assignment?.template?.default_due_time
         })) as TaskOccurrence[]
     },
 

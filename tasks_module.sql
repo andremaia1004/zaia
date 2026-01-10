@@ -3,9 +3,10 @@ CREATE TABLE task_templates (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     title TEXT NOT NULL,
     description TEXT,
-    recurrence TEXT NOT NULL, -- 'daily', 'weekly', 'monthly'
+    recurrence TEXT NOT NULL, -- 'daily', 'weekly', 'monthly', 'once'
     target_value INTEGER DEFAULT 1,
     requires_proof BOOLEAN DEFAULT false,
+    default_due_time TIME, -- Optional default time for the deadline
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
@@ -34,6 +35,8 @@ CREATE TABLE task_occurrences (
     postponed_to DATE,
     postponed_reason TEXT,
     proof_url TEXT,
+    proof_description TEXT,
+    due_at TIMESTAMP WITH TIME ZONE, -- Explicit deadline (date + time)
     staff_id UUID REFERENCES auth.users(id) NOT NULL,
     store_id UUID REFERENCES stores(id) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),

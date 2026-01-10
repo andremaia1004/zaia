@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tasksService, TaskOccurrence } from '@/services/tasks'
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns'
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, isAfter, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CheckCircle2, Circle, Clock, ChevronRight, AlertCircle, Plus, Minus } from 'lucide-react'
 import { clsx } from 'clsx'
@@ -189,7 +189,20 @@ export default function MyWeekPage() {
                                                 {getStatusIcon(occ.status)}
                                                 <div>
                                                     <h3 className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">{occ.title}</h3>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-500">Meta: {occ.target_value}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <p className="text-xs text-slate-500 dark:text-slate-500">Meta: {occ.target_value}</p>
+                                                        {occ.due_at && (
+                                                            <div className={clsx(
+                                                                "flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded",
+                                                                occ.status === 'PENDENTE' && isAfter(new Date(), parseISO(occ.due_at))
+                                                                    ? "bg-rose-500/10 text-rose-500"
+                                                                    : "bg-slate-100 dark:bg-white/5 text-slate-500"
+                                                            )}>
+                                                                <Clock className="w-3 h-3" />
+                                                                {format(parseISO(occ.due_at), "HH:mm")}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

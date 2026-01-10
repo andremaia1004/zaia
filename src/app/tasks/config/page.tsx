@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tasksService } from '@/services/tasks'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Trash2, Edit2, Users, Building, Calendar, CheckSquare, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Edit2, Users, Building, Calendar, CheckSquare, Loader2, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { toast } from 'sonner'
 import { clsx } from 'clsx'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -19,7 +20,7 @@ export default function ConfigTasksPage() {
     const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '' })
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [showTemplateModal, setShowTemplateModal] = useState(false)
-    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 0, requires_proof: false })
+    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '' })
 
     useEffect(() => {
         fetchData()
@@ -61,7 +62,10 @@ export default function ConfigTasksPage() {
     }
 
     const handleAssign = async () => {
-        if (!newAssignment.template_id || !newAssignment.staff_id || !newAssignment.store_id) return
+        if (!newAssignment.template_id || !newAssignment.staff_id || !newAssignment.store_id) {
+            toast.error('Preencha todos os campos da atribuição')
+            return
+        }
 
         try {
             const supabase = createClient()
@@ -75,9 +79,11 @@ export default function ConfigTasksPage() {
             await fetch('/api/jobs/tasks?type=weekly', { method: 'POST' })
 
             setShowAssignModal(false)
+            toast.success('Tarefa atribuída com sucesso!')
             fetchData()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating assignment:', error)
+            toast.error(`Erro ao atribuir: ${error.message}`)
         }
     }
 
@@ -85,21 +91,39 @@ export default function ConfigTasksPage() {
         if (!confirm('Tem certeza que deseja remover esta atribuição?')) return
         try {
             await tasksService.deleteAssignment(id)
+            toast.success('Atribuição removida')
             fetchData()
         } catch (error) {
             console.error('Error deleting assignment:', error)
+            toast.error('Erro ao remover atribuição')
         }
     }
 
     const handleCreateTemplate = async () => {
-        if (!newTemplate.title || !newTemplate.target_value) return
+        if (!newTemplate.title || !newTemplate.target_value) {
+            toast.error('Preencha o título e a meta')
+            return
+        }
         try {
-            await tasksService.createTemplate(newTemplate)
+            if (profile?.role !== 'super_admin') {
+                toast.error('Apenas SuperAdmins podem criar modelos de tarefas')
+                return
+            }
+
+            // Sanitize default_due_time: empty string should be null for the database
+            const templateToSave = {
+                ...newTemplate,
+                default_due_time: newTemplate.default_due_time.trim() || null
+            }
+
+            await tasksService.createTemplate(templateToSave)
             setShowTemplateModal(false)
-            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 0, requires_proof: false })
+            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '' })
+            toast.success('Modelo de tarefa criado!')
             fetchData()
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error creating template:', error)
+            toast.error(`Erro ao salvar: ${error.message}`)
         }
     }
 
@@ -280,7 +304,17 @@ export default function ConfigTasksPage() {
                                     <option value="daily">Diária</option>
                                     <option value="weekly">Semanal</option>
                                     <option value="monthly">Mensal</option>
+                                    <option value="once">Única (Uma vez)</option>
                                 </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Horário Limite (Opcional)</label>
+                                <input
+                                    type="time"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                    value={newTemplate.default_due_time}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, default_due_time: e.target.value })}
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Meta</label>
@@ -288,7 +322,7 @@ export default function ConfigTasksPage() {
                                     type="number"
                                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
                                     value={newTemplate.target_value}
-                                    onChange={(e) => setNewTemplate({ ...newTemplate, target_value: parseInt(e.target.value) || 0 })}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, target_value: parseInt(e.target.value) || 1 })}
                                 />
                             </div>
                             <div className="flex items-center gap-3 py-2">
