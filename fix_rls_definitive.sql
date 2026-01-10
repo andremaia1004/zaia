@@ -1,4 +1,4 @@
--- DEFINITIVE RLS FIX: ELIMINATING RECURSION
+-- DEFINITIVE RLS FIX: ELIMINATING RECURSION (v2 - Idempotent)
 -- Run this in Supabase SQL Editor
 
 -- 1. Helper Function (Security Definer bypasses RLS of tables it queries)
@@ -21,6 +21,8 @@ DROP POLICY IF EXISTS "Profiles visibility" ON profiles;
 DROP POLICY IF EXISTS "Profiles read access" ON profiles;
 DROP POLICY IF EXISTS "Users can read own profile" ON profiles;
 DROP POLICY IF EXISTS "Profiles read any" ON profiles;
+DROP POLICY IF EXISTS "Profiles authenticated read" ON profiles;
+DROP POLICY IF EXISTS "Profiles self update" ON profiles;
 
 -- Non-recursive policy: Everyone can see names/roles of others.
 CREATE POLICY "Profiles authenticated read" ON profiles FOR SELECT USING (auth.role() = 'authenticated');
@@ -57,6 +59,7 @@ DROP POLICY IF EXISTS "Occurrences write access" ON task_occurrences;
 DROP POLICY IF EXISTS "Occurrences self update" ON task_occurrences;
 DROP POLICY IF EXISTS "Occurrences base access" ON task_occurrences;
 DROP POLICY IF EXISTS "Occurrences admin write" ON task_occurrences;
+DROP POLICY IF EXISTS "Occurrences staff update" ON task_occurrences;
 
 CREATE POLICY "Occurrences read access" ON task_occurrences 
 FOR SELECT USING (
@@ -85,4 +88,5 @@ END $$;
 -- 6. Stores (Public Select)
 DROP POLICY IF EXISTS "Stores read" ON stores;
 DROP POLICY IF EXISTS "Stores universal read" ON stores;
+DROP POLICY IF EXISTS "Stores authenticated read" ON stores;
 CREATE POLICY "Stores authenticated read" ON stores FOR SELECT USING (auth.role() = 'authenticated');
