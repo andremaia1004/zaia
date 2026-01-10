@@ -16,8 +16,10 @@ export default function ConfigTasksPage() {
     const [stores, setStores] = useState<any[]>([])
     const [assignments, setAssignments] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [showAssignModal, setShowAssignModal] = useState(false)
     const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '' })
+    const [showAssignModal, setShowAssignModal] = useState(false)
+    const [showTemplateModal, setShowTemplateModal] = useState(false)
+    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 0, requires_proof: false })
 
     useEffect(() => {
         fetchData()
@@ -69,13 +71,45 @@ export default function ConfigTasksPage() {
 
             if (error) throw error
 
-            // Re-fetch occurrences for the week/month (simplified: just trigger the job)
+            // Trigger task generation job
             await fetch('/api/jobs/tasks?type=weekly', { method: 'POST' })
 
             setShowAssignModal(false)
             fetchData()
         } catch (error) {
             console.error('Error creating assignment:', error)
+        }
+    }
+
+    const handleDeleteAssignment = async (id: string) => {
+        if (!confirm('Tem certeza que deseja remover esta atribuição?')) return
+        try {
+            await tasksService.deleteAssignment(id)
+            fetchData()
+        } catch (error) {
+            console.error('Error deleting assignment:', error)
+        }
+    }
+
+    const handleCreateTemplate = async () => {
+        if (!newTemplate.title || !newTemplate.target_value) return
+        try {
+            await tasksService.createTemplate(newTemplate)
+            setShowTemplateModal(false)
+            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 0, requires_proof: false })
+            fetchData()
+        } catch (error) {
+            console.error('Error creating template:', error)
+        }
+    }
+
+    const handleDeleteTemplate = async (id: string) => {
+        if (!confirm('Tem certeza que deseja remover este modelo? Isso pode afetar atribuições existentes.')) return
+        try {
+            await tasksService.deleteTemplate(id)
+            fetchData()
+        } catch (error) {
+            console.error('Error deleting template:', error)
         }
     }
 
@@ -96,14 +130,25 @@ export default function ConfigTasksPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Column 1: Templates */}
                 <div className="lg:col-span-1">
-                    <div className="flex items-center gap-2 mb-4">
-                        <CheckSquare className="w-5 h-5 text-zaia-600 dark:text-zaia-400" />
-                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Modelos Ativos</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                            <CheckSquare className="w-5 h-5 text-zaia-600 dark:text-zaia-400" />
+                            <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Modelos</h2>
+                        </div>
+                        <Button size="icon" variant="outline" onClick={() => setShowTemplateModal(true)}>
+                            <Plus className="w-4 h-4" />
+                        </Button>
                     </div>
                     <div className="space-y-3">
                         {templates.map(template => (
-                            <div key={template.id} className="glass-panel p-4 border border-white/5 dark:border-white/5">
-                                <h3 className="font-medium text-slate-900 dark:text-white">{template.title}</h3>
+                            <div key={template.id} className="glass-panel p-4 border border-slate-200 dark:border-white/5 relative group">
+                                <button
+                                    onClick={() => handleDeleteTemplate(template.id)}
+                                    className="absolute top-2 right-2 p-1.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-400 transition-all"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                                <h3 className="font-medium text-slate-900 dark:text-white pr-6">{template.title}</h3>
                                 <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-500">
                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {template.recurrence}</span>
                                     <span className="flex items-center gap-1 font-bold text-zaia-600 dark:text-zaia-400">Meta: {template.target_value}</span>
@@ -148,7 +193,10 @@ export default function ConfigTasksPage() {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3">
-                                            <button className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                                            <button
+                                                onClick={() => handleDeleteAssignment(assign.id)}
+                                                className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                            >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </td>
@@ -163,13 +211,13 @@ export default function ConfigTasksPage() {
             {/* Assignment Modal */}
             {showAssignModal && (
                 <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="glass-panel border border-white/10 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                    <div className="glass-panel border border-slate-200 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 bg-white dark:bg-slate-900">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Nova Atribuição</h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Modelo de Tarefa</label>
                                 <select
-                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.template_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, template_id: e.target.value })}
                                 >
@@ -180,7 +228,7 @@ export default function ConfigTasksPage() {
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Loja</label>
                                 <select
-                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.store_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, store_id: e.target.value })}
                                 >
@@ -191,7 +239,7 @@ export default function ConfigTasksPage() {
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Colaborador (Staff)</label>
                                 <select
-                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.staff_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, staff_id: e.target.value })}
                                 >
@@ -203,6 +251,60 @@ export default function ConfigTasksPage() {
                         <div className="flex gap-3 mt-8">
                             <Button variant="outline" className="flex-1" onClick={() => setShowAssignModal(false)}>Cancelar</Button>
                             <Button className="flex-1" onClick={handleAssign}>Atribuir Agora</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {showTemplateModal && (
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="glass-panel border border-slate-200 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 bg-white dark:bg-slate-900">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Novo Modelo de Tarefa</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Título</label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                    placeholder="Ex: Abrir 10 novos leads"
+                                    value={newTemplate.title}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, title: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Recorrência</label>
+                                <select
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
+                                    value={newTemplate.recurrence}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, recurrence: e.target.value })}
+                                >
+                                    <option value="daily">Diária</option>
+                                    <option value="weekly">Semanal</option>
+                                    <option value="monthly">Mensal</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Meta</label>
+                                <input
+                                    type="number"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                    value={newTemplate.target_value}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, target_value: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div className="flex items-center gap-3 py-2">
+                                <input
+                                    type="checkbox"
+                                    id="requires_proof"
+                                    checked={newTemplate.requires_proof}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, requires_proof: e.target.checked })}
+                                    className="w-4 h-4 text-zaia-600 border-slate-300 rounded focus:ring-zaia-500"
+                                />
+                                <label htmlFor="requires_proof" className="text-sm text-slate-600 dark:text-slate-300">Exigir prova (observação/anexo)</label>
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowTemplateModal(false)}>Cancelar</Button>
+                            <Button className="flex-1" onClick={handleCreateTemplate}>Criar Modelo</Button>
                         </div>
                     </div>
                 </div>

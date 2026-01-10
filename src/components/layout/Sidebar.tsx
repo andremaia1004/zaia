@@ -18,12 +18,22 @@ const adminNavItems = [
 const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Agenda', href: '/agenda', icon: Calendar },
-    { name: 'Tarefas', href: '/tasks/my-week', icon: CheckSquare },
+    {
+        name: 'Tarefas',
+        href: '/tasks',
+        icon: CheckSquare,
+        children: [
+            { name: 'Minha Semana', href: '/tasks/my-week' },
+            { name: 'Calendário', href: '/tasks/calendar' },
+            { name: 'Ranking', href: '/tasks/ranking', roles: ['super_admin'] },
+            { name: 'Configurações', href: '/tasks/config', roles: ['super_admin', 'admin'] },
+        ]
+    },
     { name: 'Clientes', href: '/clients', icon: Users },
-    { name: 'Profissionais', href: '/professionals', icon: Briefcase },
+    { name: 'Profissionais', href: '/professionals', icon: Briefcase, roles: ['super_admin'] },
     { name: 'Pipeline', href: '/leads', icon: Layers },
-    { name: 'Relatórios', href: '/reports', icon: TrendingUp },
-    { name: 'Configurações', href: '/settings', icon: Settings },
+    { name: 'Relatórios', href: '/reports', icon: TrendingUp, roles: ['super_admin'] },
+    { name: 'Configurações', href: '/settings', icon: Settings, roles: ['super_admin', 'admin'] },
 ]
 
 export function Sidebar() {
@@ -107,35 +117,64 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-                {(profile?.role === 'super_admin' && !selectedStore ? adminNavItems : navItems).map((item) => {
-                    // 1. Permission Check for Super Admin Only Items
-                    // User Request: "Profissionais" and "Relatórios" only for Super Admin
-                    if (['/professionals', '/reports'].includes(item.href)) {
-                        if (profile?.role !== 'super_admin') return null
-                    }
+                {(profile?.role === 'super_admin' && !selectedStore ? adminNavItems : navItems).map((item: any) => {
+                    // Role Checks
+                    if (item.roles && !item.roles.includes(profile?.role)) return null
 
-                    // 2. Permission Check for Staff
-                    if (profile?.role === 'staff') {
-                        if (['/settings'].includes(item.href)) return null
-                    }
-
-                    const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+                    const isActive = pathname === item.href || (item.children ? item.children.some((c: any) => pathname === c.href) : pathname?.startsWith(`${item.href}/`))
                     const Icon = item.icon
+                    const hasChildren = item.children && item.children.length > 0
 
                     return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={clsx(
-                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
-                                isActive
-                                    ? "bg-zaia-600/20 text-zaia-300 border border-zaia-500/30"
-                                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                        <div key={item.href} className="space-y-1">
+                            {hasChildren ? (
+                                <>
+                                    <div className={clsx(
+                                        "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group cursor-default",
+                                        isActive ? "text-zaia-300" : "text-slate-400 group-hover:text-white"
+                                    )}>
+                                        <div className="flex items-center gap-3">
+                                            <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                            <span className="font-medium">{item.name}</span>
+                                        </div>
+                                    </div>
+                                    <div className="ml-9 space-y-1">
+                                        {item.children.map((child: any) => {
+                                            if (child.roles && !child.roles.includes(profile?.role)) return null
+                                            const isChildActive = pathname === child.href
+
+                                            return (
+                                                <Link
+                                                    key={child.href}
+                                                    href={child.href}
+                                                    className={clsx(
+                                                        "block px-4 py-2 text-sm rounded-lg transition-all duration-200",
+                                                        isChildActive
+                                                            ? "bg-zaia-600/20 text-zaia-300 font-medium"
+                                                            : "text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                                                    )}
+                                                >
+                                                    {child.name}
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                </>
+                            ) : (
+                                <Link
+                                    href={item.href}
+                                    className={clsx(
+                                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                        isActive
+                                            ? "bg-zaia-600/20 text-zaia-300 border border-zaia-500/30"
+                                            : "text-slate-400 hover:bg-white/5 hover:text-white"
+                                    )}
+                                >
+                                    <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                    <span className="font-medium">{item.name}</span>
+                                </Link>
                             )}
-                        >
-                            <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
-                            <span className="font-medium">{item.name}</span>
-                        </Link>
+                        </div>
                     )
                 })}
             </nav>

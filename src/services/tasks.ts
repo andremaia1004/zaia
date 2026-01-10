@@ -12,8 +12,10 @@ export interface TaskOccurrence {
     postponed_to?: string
     postponed_reason?: string
     proof_url?: string
+    proof_description?: string
     staff_id: string
     store_id: string
+    requires_proof?: boolean
 }
 
 export const tasksService = {
@@ -21,14 +23,24 @@ export const tasksService = {
         const supabase = createClient()
         const { data, error } = await supabase
             .from('task_occurrences')
-            .select('*')
+            .select(`
+                *,
+                assignment:assignment_id(
+                    template:template_id(requires_proof)
+                )
+            `)
             .eq('staff_id', staffId)
             .gte('date', startDate)
             .lte('date', endDate)
             .order('date', { ascending: true })
 
         if (error) throw error
-        return data as TaskOccurrence[]
+
+        // Flatten the joined data
+        return (data as any[]).map(occ => ({
+            ...occ,
+            requires_proof: occ.assignment?.template?.requires_proof || false
+        })) as TaskOccurrence[]
     },
 
     async updateOccurrence(id: string, updates: Partial<TaskOccurrence>) {
@@ -84,5 +96,37 @@ export const tasksService = {
 
         if (error) throw error
         return data as TaskOccurrence
+    },
+
+    async createTemplate(template: any) {
+        const supabase = createClient()
+        const { data, error } = await supabase
+            .from('task_templates')
+            .insert(template)
+            .select()
+            .single()
+
+        if (error) throw error
+        return data
+    },
+
+    async deleteTemplate(id: string) {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('task_templates')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
+    },
+
+    async deleteAssignment(id: string) {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('task_assignments')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
     }
 }

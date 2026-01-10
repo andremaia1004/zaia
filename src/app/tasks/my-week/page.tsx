@@ -12,6 +12,13 @@ export default function MyWeekPage() {
     const { profile } = useAuth()
     const [occurrences, setOccurrences] = useState<TaskOccurrence[]>([])
     const [loading, setLoading] = useState(true)
+    const [selectedOccurrence, setSelectedOccurrence] = useState<TaskOccurrence | null>(null)
+    const [postponeDate, setPostponeDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+    const [postponeReason, setPostponeReason] = useState('')
+    const [isPostponing, setIsPostponing] = useState(false)
+    const [proofModal, setProofModal] = useState(false)
+    const [proofDescription, setProofDescription] = useState('')
+    const [occurrenceForProof, setOccurrenceForProof] = useState<TaskOccurrence | null>(null)
 
     // Week range
     const today = new Date()
@@ -41,22 +48,68 @@ export default function MyWeekPage() {
         }
     }
 
-    const handleIncrement = async (task: TaskOccurrence) => {
-        if (task.status === 'FEITA') return
+    const handleIncrement = async (occ: TaskOccurrence) => {
+        if (occ.status === 'FEITA') return
+
+        // Check if proof is required for the LAST increment (reaching target)
+        if (occ.requires_proof && occ.current_value + 1 >= occ.target_value) {
+            setOccurrenceForProof(occ)
+            setProofModal(true)
+            return
+        }
+
         try {
-            const updated = await tasksService.incrementCounter(task.id, task.current_value, task.target_value)
+            const updated = await tasksService.incrementCounter(occ.id, occ.current_value, occ.target_value)
             setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o))
         } catch (error) {
-            console.error('Error updating task:', error)
+            console.error('Error incrementing counter:', error)
         }
     }
 
-    const handleMarkDone = async (task: TaskOccurrence) => {
+    const handleMarkDone = async (occ: TaskOccurrence) => {
+        if (occ.requires_proof) {
+            setOccurrenceForProof(occ)
+            setProofModal(true)
+            return
+        }
+
         try {
-            const updated = await tasksService.updateOccurrence(task.id, { status: 'FEITA', current_value: task.target_value })
+            const updated = await tasksService.updateOccurrence(occ.id, { status: 'FEITA', current_value: occ.target_value })
             setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o))
         } catch (error) {
             console.error('Error marking as done:', error)
+        }
+    }
+
+    const handleProofSubmit = async () => {
+        if (!occurrenceForProof) return
+        try {
+            const updated = await tasksService.updateOccurrence(occurrenceForProof.id, {
+                status: 'FEITA',
+                current_value: occurrenceForProof.target_value,
+                proof_description: proofDescription
+            })
+            setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o))
+            setProofModal(false)
+            setProofDescription('')
+            setOccurrenceForProof(null)
+        } catch (error) {
+            console.error('Error submitting proof:', error)
+        }
+    }
+
+    const handlePostpone = async () => {
+        if (!selectedOccurrence || !postponeDate) return
+        try {
+            setIsPostponing(true)
+            await tasksService.postponeTask(selectedOccurrence.id, postponeDate, postponeReason)
+            setSelectedOccurrence(null)
+            setPostponeReason('')
+            fetchOccurrences()
+        } catch (error) {
+            console.error('Error postponing task:', error)
+        } finally {
+            setIsPostponing(false)
         }
     }
 
@@ -80,6 +133,7 @@ export default function MyWeekPage() {
                 </p>
             </header>
 
+            {/* Daily Progress summary */}
             <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-8">
                 {days.map((day) => {
                     const dayTasks = occurrences.filter(o => isSameDay(new Date(o.date + 'T12:00:00'), day))
@@ -113,28 +167,29 @@ export default function MyWeekPage() {
                 })}
             </div>
 
-            <div className="space-y-4">
+            {/* Task list grouped by day */}
+            <div className="space-y-8">
                 {days.map((day) => {
                     const dayTasks = occurrences.filter(o => isSameDay(new Date(o.date + 'T12:00:00'), day))
                     if (dayTasks.length === 0) return null
 
                     return (
-                        <section key={day.toString()} className="mb-6">
-                            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <section key={day.toString()}>
+                            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2">
                                 <span className={isSameDay(day, today) ? "text-zaia-400" : ""}>
                                     {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                                 </span>
                                 {isSameDay(day, today) && <span className="text-[10px] bg-zaia-500/20 text-zaia-400 px-2 py-0.5 rounded-full">HOJE</span>}
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {dayTasks.map((task) => (
-                                    <div key={task.id} className="glass-panel p-5 border border-white/5 hover:border-white/10 dark:border-white/5 dark:hover:border-white/10 transition-colors group">
+                                {dayTasks.map((occ) => (
+                                    <div key={occ.id} className="glass-panel p-5 border border-white/5 hover:border-white/10 dark:border-white/5 dark:hover:border-white/10 transition-colors group">
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex items-center gap-3">
-                                                {getStatusIcon(task.status)}
+                                                {getStatusIcon(occ.status)}
                                                 <div>
-                                                    <h3 className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">{task.title}</h3>
-                                                    <p className="text-xs text-slate-500 dark:text-slate-500">Meta: {task.target_value}</p>
+                                                    <h3 className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">{occ.title}</h3>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-500">Meta: {occ.target_value}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -143,41 +198,55 @@ export default function MyWeekPage() {
                                             <div className="flex-1">
                                                 <div className="flex justify-between text-xs mb-1">
                                                     <span className="text-slate-500 dark:text-slate-400">Progresso</span>
-                                                    <span className="text-slate-900 dark:text-white font-medium">{task.current_value} / {task.target_value}</span>
+                                                    <span className="text-slate-900 dark:text-white font-medium">{occ.current_value} / {occ.target_value}</span>
                                                 </div>
                                                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                                                     <div
                                                         className={clsx(
                                                             "h-full transition-all duration-500",
-                                                            task.status === 'FEITA' ? "bg-emerald-500" : "bg-zaia-500"
+                                                            occ.status === 'FEITA' ? "bg-emerald-500" : "bg-zaia-500"
                                                         )}
-                                                        style={{ width: `${Math.min((task.current_value / task.target_value) * 100, 100)}%` }}
+                                                        style={{ width: `${Math.min((occ.current_value / occ.target_value) * 100, 100)}%` }}
                                                     />
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-1 shrink-0">
-                                                {task.target_value > 1 ? (
-                                                    <button
-                                                        onClick={() => handleIncrement(task)}
-                                                        disabled={task.status === 'FEITA'}
-                                                        className="p-2 rounded-lg bg-white/5 hover:bg-zaia-500/20 text-slate-400 hover:text-zaia-400 disabled:opacity-30 transition-all font-bold"
-                                                    >
-                                                        <Plus className="w-4 h-4" />
-                                                    </button>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleMarkDone(task)}
-                                                        disabled={task.status === 'FEITA'}
-                                                        className={clsx(
-                                                            "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                                                            task.status === 'FEITA'
-                                                                ? "bg-emerald-500/10 text-emerald-400 cursor-default"
-                                                                : "bg-zaia-500/10 text-zaia-400 hover:bg-zaia-500 hover:text-white"
+                                            <div className="flex gap-2 shrink-0">
+                                                {occ.status === 'PENDENTE' && (
+                                                    <>
+                                                        <button
+                                                            onClick={() => {
+                                                                setSelectedOccurrence(occ)
+                                                                setPostponeDate(format(new Date(), 'yyyy-MM-dd'))
+                                                            }}
+                                                            className="p-2 text-slate-400 hover:text-zaia-400 hover:bg-zaia-500/10 rounded-lg transition-colors border border-white/5"
+                                                            title="Adiar Tarefa"
+                                                        >
+                                                            <Clock className="w-4 h-4" />
+                                                        </button>
+                                                        {occ.target_value > 1 ? (
+                                                            <button
+                                                                onClick={() => handleIncrement(occ)}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-zaia-600/10 hover:bg-zaia-500 text-zaia-600 dark:text-zaia-300 hover:text-white rounded-lg transition-all text-xs font-bold border border-zaia-500/20"
+                                                            >
+                                                                <Plus className="w-3.5 h-3.5" />
+                                                                +1
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleMarkDone(occ)}
+                                                                className="flex items-center gap-2 px-3 py-1.5 bg-zaia-600/10 hover:bg-emerald-500 text-zaia-600 dark:text-zaia-300 hover:text-white rounded-lg transition-all text-xs font-bold border border-zaia-500/20"
+                                                            >
+                                                                Concluir
+                                                            </button>
                                                         )}
-                                                    >
-                                                        {task.status === 'FEITA' ? 'Feito' : 'Marcar Feito'}
-                                                    </button>
+                                                    </>
+                                                )}
+                                                {occ.status === 'ADIADA' && (
+                                                    <span className="text-[10px] text-amber-500 font-bold uppercase py-1 px-2 bg-amber-500/10 rounded">Adiada</span>
+                                                )}
+                                                {occ.status === 'FEITA' && (
+                                                    <span className="text-[10px] text-emerald-500 font-bold uppercase py-1 px-2 bg-emerald-500/10 rounded">Feito</span>
                                                 )}
                                             </div>
                                         </div>
@@ -188,6 +257,68 @@ export default function MyWeekPage() {
                     )
                 })}
             </div>
+
+            {/* Postpone Modal */}
+            {selectedOccurrence && (
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="glass-panel border border-slate-200 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 bg-white dark:bg-slate-900">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Adiar Tarefa</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Empurrar para quando?</label>
+                                <input
+                                    type="date"
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 dark:[&::-webkit-calendar-picker-indicator]:invert"
+                                    value={postponeDate}
+                                    onChange={(e) => setPostponeDate(e.target.value)}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Motivo (Opcional)</label>
+                                <textarea
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 h-24 resize-none"
+                                    placeholder="Explique o motivo do adiamento..."
+                                    value={postponeReason}
+                                    onChange={(e) => setPostponeReason(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <Button variant="outline" className="flex-1" onClick={() => setSelectedOccurrence(null)}>Cancelar</Button>
+                            <Button className="flex-1" onClick={handlePostpone} loading={isPostponing}>Confirmar Adiamento</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Proof Modal */}
+            {proofModal && occurrenceForProof && (
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="glass-panel border border-slate-200 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 bg-white dark:bg-slate-900">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Comprovação Necessária</h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Esta tarefa requer uma breve descrição ou link do resultado para ser concluída.</p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">O que foi feito? (Ex: Link do drive ou descrição)</label>
+                                <textarea
+                                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 h-32 resize-none"
+                                    placeholder="Descreva aqui o resultado ou cole o link da comprovação..."
+                                    value={proofDescription}
+                                    onChange={(e) => setProofDescription(e.target.value)}
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 mt-8">
+                            <Button variant="outline" className="flex-1" onClick={() => {
+                                setProofModal(false)
+                                setOccurrenceForProof(null)
+                                setProofDescription('')
+                            }}>Cancelar</Button>
+                            <Button className="flex-1" onClick={handleProofSubmit} disabled={!proofDescription.trim()}>Concluir Tarefa</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
