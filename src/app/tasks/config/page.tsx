@@ -33,19 +33,32 @@ export default function ConfigTasksPage() {
 
             // 1. Templates
             const templatesData = await tasksService.getTemplates()
-            setTemplates(templatesData)
+            if (!templatesData || templatesData.length === 0) {
+                console.warn('No task templates found')
+            }
+            setTemplates(templatesData || [])
 
-            // 2. Staff (Profiles)
-            const { data: profiles } = await supabase
+            // 2. Staff (Profiles) - Fetch staff and store_admin since both can have tasks
+            const { data: profiles, error: profileError } = await supabase
                 .from('profiles')
                 .select('id, name, role, store_id')
-                .eq('role', 'staff')
+                .in('role', ['staff', 'store_admin'])
+
+            if (profileError) {
+                console.error('Error fetching profiles:', profileError.message)
+                toast.error('Erro ao carregar colaboradores')
+            }
             setStaff(profiles || [])
 
             // 3. Stores
-            const { data: storesData } = await supabase
+            const { data: storesData, error: storesError } = await supabase
                 .from('stores')
                 .select('id, name')
+
+            if (storesError) {
+                console.error('Error fetching stores:', storesError.message)
+                toast.error('Erro ao carregar lojas')
+            }
             setStores(storesData || [])
 
             // 4. Assignments
