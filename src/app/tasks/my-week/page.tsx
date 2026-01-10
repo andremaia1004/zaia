@@ -74,8 +74,8 @@ export default function MyWeekPage() {
     return (
         <div className="p-8 max-w-7xl mx-auto">
             <header className="mb-8">
-                <h1 className="text-3xl font-bold text-white mb-2">Minha Semana</h1>
-                <p className="text-slate-400">
+                <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Minha Semana</h1>
+                <p className="text-slate-600 dark:text-slate-400">
                     Acompanhe suas metas de {format(weekStart, "d 'de' MMMM", { locale: ptBR })} a {format(weekEnd, "d 'de' MMMM", { locale: ptBR })}
                 </p>
             </header>
@@ -95,10 +95,10 @@ export default function MyWeekPage() {
                                 isToday ? "border-zaia-500/50 bg-zaia-500/10 scale-105" : "border-white/5"
                             )}
                         >
-                            <span className="text-xs font-medium text-slate-500 uppercase mb-1">
+                            <span className="text-xs font-medium text-slate-500 dark:text-slate-500 uppercase mb-1">
                                 {format(day, 'eee', { locale: ptBR })}
                             </span>
-                            <span className={clsx("text-lg font-bold mb-2", isToday ? "text-zaia-400" : "text-white")}>
+                            <span className={clsx("text-lg font-bold mb-2", isToday ? "text-zaia-600 dark:text-zaia-400" : "text-slate-900 dark:text-white")}>
                                 {format(day, 'dd')}
                             </span>
                             <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
@@ -107,7 +107,7 @@ export default function MyWeekPage() {
                                     style={{ width: totalCount > 0 ? `${(doneCount / totalCount) * 100}%` : '0%' }}
                                 />
                             </div>
-                            <span className="text-[10px] text-slate-500 mt-1">{doneCount}/{totalCount}</span>
+                            <span className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">{doneCount}/{totalCount}</span>
                         </div>
                     )
                 })}
@@ -128,13 +128,13 @@ export default function MyWeekPage() {
                             </h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {dayTasks.map((task) => (
-                                    <div key={task.id} className="glass-panel p-5 border border-white/5 hover:border-white/10 transition-colors group">
+                                    <div key={task.id} className="glass-panel p-5 border border-white/5 hover:border-white/10 dark:border-white/5 dark:hover:border-white/10 transition-colors group">
                                         <div className="flex items-start justify-between mb-4">
                                             <div className="flex items-center gap-3">
                                                 {getStatusIcon(task.status)}
                                                 <div>
-                                                    <h3 className="font-medium text-white group-hover:text-zaia-300 transition-colors">{task.title}</h3>
-                                                    <p className="text-xs text-slate-500">Meta: {task.target_value}</p>
+                                                    <h3 className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">{task.title}</h3>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-500">Meta: {task.target_value}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -142,8 +142,8 @@ export default function MyWeekPage() {
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex-1">
                                                 <div className="flex justify-between text-xs mb-1">
-                                                    <span className="text-slate-400">Progresso</span>
-                                                    <span className="text-white font-medium">{task.current_value} / {task.target_value}</span>
+                                                    <span className="text-slate-500 dark:text-slate-400">Progresso</span>
+                                                    <span className="text-slate-900 dark:text-white font-medium">{task.current_value} / {task.target_value}</span>
                                                 </div>
                                                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
                                                     <div

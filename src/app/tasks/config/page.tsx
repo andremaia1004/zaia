@@ -85,8 +85,8 @@ export default function ConfigTasksPage() {
         <div className="p-8 max-w-7xl mx-auto">
             <header className="flex items-center justify-between mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-white mb-2">Configurar Tarefas</h1>
-                    <p className="text-slate-400">Gerencie modelos de métricas e atribuições para os colaboradores.</p>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Configurar Tarefas</h1>
+                    <p className="text-slate-600 dark:text-slate-400">Gerencie modelos de métricas e atribuições para os colaboradores.</p>
                 </div>
                 <Button onClick={() => setShowAssignModal(true)} className="flex items-center gap-2">
                     <Plus className="w-4 h-4" /> Atribuir Tarefa
@@ -97,16 +97,16 @@ export default function ConfigTasksPage() {
                 {/* Column 1: Templates */}
                 <div className="lg:col-span-1">
                     <div className="flex items-center gap-2 mb-4">
-                        <CheckSquare className="w-5 h-5 text-zaia-400" />
-                        <h2 className="text-xl font-semibold text-white">Modelos Ativos</h2>
+                        <CheckSquare className="w-5 h-5 text-zaia-600 dark:text-zaia-400" />
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Modelos Ativos</h2>
                     </div>
                     <div className="space-y-3">
                         {templates.map(template => (
-                            <div key={template.id} className="glass-panel p-4 border border-white/5">
-                                <h3 className="font-medium text-white">{template.title}</h3>
-                                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
+                            <div key={template.id} className="glass-panel p-4 border border-white/5 dark:border-white/5">
+                                <h3 className="font-medium text-slate-900 dark:text-white">{template.title}</h3>
+                                <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-500">
                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {template.recurrence}</span>
-                                    <span className="flex items-center gap-1 font-bold text-zaia-400">Meta: {template.target_value}</span>
+                                    <span className="flex items-center gap-1 font-bold text-zaia-600 dark:text-zaia-400">Meta: {template.target_value}</span>
                                 </div>
                             </div>
                         ))}
@@ -116,8 +116,8 @@ export default function ConfigTasksPage() {
                 {/* Column 2: Current Assignments */}
                 <div className="lg:col-span-2">
                     <div className="flex items-center gap-2 mb-4">
-                        <Users className="w-5 h-5 text-zaia-400" />
-                        <h2 className="text-xl font-semibold text-white">Atribuições Atuais</h2>
+                        <Users className="w-5 h-5 text-zaia-600 dark:text-zaia-400" />
+                        <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Atribuições Atuais</h2>
                     </div>
                     <div className="glass-panel border border-white/5 overflow-hidden">
                         <table className="w-full text-left border-collapse">
@@ -132,13 +132,13 @@ export default function ConfigTasksPage() {
                             </thead>
                             <tbody className="divide-y divide-white/5">
                                 {assignments.map(assign => (
-                                    <tr key={assign.id} className="hover:bg-white/5 transition-colors">
+                                    <tr key={assign.id} className="hover:bg-white/5 dark:hover:bg-white/5 transition-colors">
                                         <td className="px-4 py-3">
-                                            <div className="font-medium text-white">{assign.task_templates?.title}</div>
-                                            <div className="text-[10px] text-slate-500 uppercase">{assign.task_templates?.recurrence}</div>
+                                            <div className="font-medium text-slate-900 dark:text-white">{assign.task_templates?.title}</div>
+                                            <div className="text-[10px] text-slate-500 dark:text-slate-500 uppercase">{assign.task_templates?.recurrence}</div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-slate-300">{assign.profiles?.name}</td>
-                                        <td className="px-4 py-3 text-sm text-slate-300">{assign.stores?.name}</td>
+                                        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{assign.profiles?.name}</td>
+                                        <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{assign.stores?.name}</td>
                                         <td className="px-4 py-3">
                                             <span className={clsx(
                                                 "px-2 py-0.5 rounded-full text-[10px] font-bold uppercase",
@@ -162,41 +162,41 @@ export default function ConfigTasksPage() {
 
             {/* Assignment Modal */}
             {showAssignModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-                    <div className="glass-panel border border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
-                        <h3 className="text-xl font-bold text-white mb-6">Nova Atribuição</h3>
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="glass-panel border border-white/10 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200">
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Nova Atribuição</h3>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Modelo de Tarefa</label>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Modelo de Tarefa</label>
                                 <select
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.template_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, template_id: e.target.value })}
                                 >
-                                    <option value="" className="bg-slate-900">Selecione um modelo</option>
-                                    {templates.map(t => <option key={t.id} value={t.id} className="bg-slate-900">{t.title} ({t.recurrence})</option>)}
+                                    <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione um modelo</option>
+                                    {templates.map(t => <option key={t.id} value={t.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{t.title} ({t.recurrence})</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Loja</label>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Loja</label>
                                 <select
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.store_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, store_id: e.target.value })}
                                 >
-                                    <option value="" className="bg-slate-900">Selecione a loja</option>
-                                    {stores.map(s => <option key={s.id} value={s.id} className="bg-slate-900">{s.name}</option>)}
+                                    <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione a loja</option>
+                                    {stores.map(s => <option key={s.id} value={s.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{s.name}</option>)}
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-slate-400 uppercase mb-1">Colaborador (Staff)</label>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Colaborador (Staff)</label>
                                 <select
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-zaia-500 appearance-none"
+                                    className="w-full bg-white/5 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.staff_id}
                                     onChange={(e) => setNewAssignment({ ...newAssignment, staff_id: e.target.value })}
                                 >
-                                    <option value="" className="bg-slate-900">Selecione o staff</option>
-                                    {staff.map(u => <option key={u.id} value={u.id} className="bg-slate-900">{u.name}</option>)}
+                                    <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione o staff</option>
+                                    {staff.map(u => <option key={u.id} value={u.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{u.name}</option>)}
                                 </select>
                             </div>
                         </div>

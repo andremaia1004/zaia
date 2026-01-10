@@ -42,37 +42,37 @@ export default function RankingPage() {
         <div className="p-8 max-w-7xl mx-auto">
             <header className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
-                    <Trophy className="w-8 h-8 text-amber-400" />
-                    <h1 className="text-3xl font-bold text-white">Ranking de Performance</h1>
+                    <Trophy className="w-8 h-8 text-amber-500 dark:text-amber-400" />
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Ranking de Performance</h1>
                 </div>
-                <p className="text-slate-400">Classificação semanal baseada na execução das metas estabelecidas.</p>
+                <p className="text-slate-600 dark:text-slate-400">Classificação semanal baseada na execução das metas estabelecidas.</p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                <div className="glass-panel p-6 border border-zaia-500/20 bg-zaia-500/5">
+                <div className="glass-panel p-6 border border-zaia-500/20 bg-zaia-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-zaia-500/20 rounded-lg"><Target className="w-5 h-5 text-zaia-400" /></div>
-                        <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">Média Global</span>
+                        <div className="p-2 bg-zaia-500/10 dark:bg-zaia-500/20 rounded-lg"><Target className="w-5 h-5 text-zaia-600 dark:text-zaia-400" /></div>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Média Global</span>
                     </div>
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
                         {scores.length > 0 ? (scores.reduce((acc, s) => acc + Number(s.execution_rate), 0) / scores.length).toFixed(1) : 0}%
                     </div>
                 </div>
-                <div className="glass-panel p-6 border border-emerald-500/20 bg-emerald-500/5">
+                <div className="glass-panel p-6 border border-emerald-500/20 bg-emerald-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-emerald-500/20 rounded-lg"><Award className="w-5 h-5 text-emerald-400" /></div>
-                        <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">Bônus Atingidos</span>
+                        <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg"><Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bônus Atingidos</span>
                     </div>
-                    <div className="text-3xl font-bold text-white">
-                        {scores.filter(s => s.met_bonus).length} <span className="text-sm font-normal text-slate-500 ml-2">colaboradores</span>
+                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {scores.filter(s => s.met_bonus).length} <span className="text-sm font-normal text-slate-500 dark:text-slate-500 ml-2">colaboradores</span>
                     </div>
                 </div>
-                <div className="glass-panel p-6 border border-amber-500/20 bg-amber-500/5">
+                <div className="glass-panel p-6 border border-amber-500/20 bg-amber-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-amber-500/20 rounded-lg"><DollarSign className="w-5 h-5 text-amber-400" /></div>
-                        <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">Total em Bônus</span>
+                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg"><DollarSign className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total em Bônus</span>
                     </div>
-                    <div className="text-3xl font-bold text-white">
+                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
                         R$ {scores.reduce((acc, s) => acc + Number(s.bonus_value), 0).toLocaleString('pt-BR')}
                     </div>
                 </div>
@@ -93,8 +93,8 @@ export default function RankingPage() {
                     <tbody className="divide-y divide-white/5">
                         {scores.map((score, index) => (
                             <tr key={score.id} className={clsx(
-                                "hover:bg-white/5 transition-colors group",
-                                index === 0 && "bg-amber-500/10"
+                                "hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group",
+                                index === 0 && "bg-amber-500/5 dark:bg-amber-500/10"
                             )}>
                                 <td className="px-6 py-4">
                                     <div className={clsx(
@@ -111,18 +111,18 @@ export default function RankingPage() {
                                         <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-zaia-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-lg shadow-zaia-500/20">
                                             {score.profiles?.name?.substring(0, 2).toUpperCase()}
                                         </div>
-                                        <span className="font-medium text-white group-hover:text-zaia-300 transition-colors">{score.profiles?.name}</span>
+                                        <span className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-300 transition-colors">{score.profiles?.name}</span>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <Store className="w-3.5 h-3.5 text-slate-500" />
+                                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                        <Store className="w-3.5 h-3.5 text-slate-500 dark:text-slate-500" />
                                         {score.stores?.name}
                                     </div>
                                 </td>
                                 <td className="px-6 py-4">
                                     <div className="flex flex-col items-center gap-1">
-                                        <div className="text-lg font-bold text-white">
+                                        <div className="text-lg font-bold text-slate-900 dark:text-white">
                                             {Number(score.execution_rate).toFixed(0)}%
                                         </div>
                                         <div className="w-24 bg-white/5 h-1.5 rounded-full overflow-hidden">

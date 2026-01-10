@@ -11,9 +11,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant = 'primary', size = 'md', loading, children, disabled, ...props }, ref) => {
         const variants = {
             primary: "btn-primary bg-zaia-600 hover:bg-zaia-500 text-white shadow-lg shadow-zaia-600/20",
-            outline: "border border-white/10 hover:border-zaia-500/50 hover:bg-zaia-500/10 text-slate-300 hover:text-zaia-300",
-            ghost: "hover:bg-white/5 text-slate-400 hover:text-white",
-            danger: "bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20",
+            outline: "border border-slate-200 dark:border-white/10 hover:border-zaia-500/50 hover:bg-zaia-500/10 text-slate-600 dark:text-slate-300 hover:text-zaia-600 dark:hover:text-zaia-300",
+            ghost: "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
+            danger: "bg-rose-500/10 hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white border border-rose-500/20",
         }
 
         const sizes = {
