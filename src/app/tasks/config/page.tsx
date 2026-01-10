@@ -21,10 +21,21 @@ export default function ConfigTasksPage() {
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [showTemplateModal, setShowTemplateModal] = useState(false)
     const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '' })
+    const [assigning, setAssigning] = useState(false)
 
     useEffect(() => {
         fetchData()
     }, [profile, selectedStore])
+
+    useEffect(() => {
+        if (showAssignModal) {
+            console.log('Assignment Modal opened. Checking data availability:', {
+                templates: templates.length,
+                staff: staff.length,
+                stores: stores.length
+            })
+        }
+    }, [showAssignModal, templates, staff, stores])
 
     const fetchData = async () => {
         try {
@@ -99,12 +110,15 @@ export default function ConfigTasksPage() {
     }
 
     const handleAssign = async () => {
+        console.log('handleAssign triggered. State:', newAssignment)
         if (!newAssignment.template_id || !newAssignment.staff_id || !newAssignment.store_id) {
+            console.warn('Assignment validation failed:', newAssignment)
             toast.error('Preencha todos os campos da atribuição')
             return
         }
 
         try {
+            setAssigning(true)
             const supabase = createClient()
             console.log('Sending assignment data:', newAssignment)
             const { data, error } = await supabase
@@ -126,11 +140,13 @@ export default function ConfigTasksPage() {
             setShowAssignModal(false)
             toast.success('Tarefa atribuída com sucesso!')
             fetchData()
-            setNewAssignment({ template_id: '', staff_id: '', store_id: '' })
+            setNewAssignment({ template_id: '', staff_id: '', store_id: selectedStore?.id || '' })
         } catch (error: any) {
             console.error('Failed to create assignment:', error)
             const detail = error.details || error.message || 'Erro de permissão ou conexão'
             toast.error(`Erro ao atribuir: ${detail}`)
+        } finally {
+            setAssigning(false)
         }
     }
 
@@ -195,7 +211,11 @@ export default function ConfigTasksPage() {
                 </div>
                 <Button
                     onClick={() => {
-                        setNewAssignment({ template_id: '', staff_id: '', store_id: '' })
+                        setNewAssignment({
+                            template_id: '',
+                            staff_id: '',
+                            store_id: selectedStore?.id || ''
+                        })
                         setShowAssignModal(true)
                     }}
                     className="flex items-center gap-2"
@@ -290,6 +310,14 @@ export default function ConfigTasksPage() {
                 <div className="fixed inset-0 bg-black/60 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                     <div className="glass-panel border border-slate-200 dark:border-white/10 w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 bg-white dark:bg-slate-900">
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6">Nova Atribuição</h3>
+
+                        {(templates.length === 0 || staff.length === 0 || stores.length === 0) && (
+                            <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center gap-2 text-rose-600 dark:text-rose-400 text-xs">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>Alguns dados estão faltando. Verifique se existem modelos, staff e lojas cadastrados e se as permissões (RLS) foram aplicadas.</span>
+                            </div>
+                        )}
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Modelo de Tarefa</label>
@@ -326,8 +354,23 @@ export default function ConfigTasksPage() {
                             </div>
                         </div>
                         <div className="flex gap-3 mt-8">
-                            <Button variant="outline" className="flex-1" onClick={() => setShowAssignModal(false)}>Cancelar</Button>
-                            <Button className="flex-1" onClick={handleAssign}>Atribuir Agora</Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setShowAssignModal(false)}
+                                disabled={assigning}
+                            >
+                                Cancelar
+                            </Button>
+                            <Button
+                                type="button"
+                                className="flex-1"
+                                onClick={handleAssign}
+                                loading={assigning}
+                            >
+                                Atribuir Agora
+                            </Button>
                         </div>
                     </div>
                 </div>
