@@ -9,11 +9,6 @@ import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { ThemeToggle } from '../ui/ThemeToggle'
 
-const adminNavItems = [
-    { name: 'Painel Administrativo', href: '/admin', icon: Shield },
-    { name: 'Profissionais', href: '/professionals', icon: Briefcase },
-    { name: 'Configurações', href: '/settings', icon: Settings },
-]
 
 const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -117,7 +112,25 @@ export function Sidebar() {
             </div>
 
             <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-                {(profile?.role === 'super_admin' && !selectedStore ? adminNavItems : navItems).map((item: any) => {
+                {/* Global Admin Section */}
+                {profile?.role === 'super_admin' && (
+                    <div className="mb-4 pb-4 border-b border-white/5 space-y-1">
+                        <Link
+                            href="/admin"
+                            className={clsx(
+                                "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
+                                pathname === '/admin'
+                                    ? "bg-zaia-600/20 text-zaia-300 border border-zaia-500/30"
+                                    : "text-slate-400 hover:bg-white/5 hover:text-white"
+                            )}
+                        >
+                            <Shield className={clsx("w-5 h-5", pathname === '/admin' ? "text-zaia-400" : "group-hover:text-white")} />
+                            <span className="font-medium">Painel Admin</span>
+                        </Link>
+                    </div>
+                )}
+
+                {navItems.map((item: any) => {
                     // Role Checks
                     if (item.roles && !item.roles.includes(profile?.role)) return null
 
@@ -126,7 +139,7 @@ export function Sidebar() {
                     const hasChildren = item.children && item.children.length > 0
 
                     return (
-                        <div key={item.href} className="space-y-1">
+                        <div key={item.name + item.href} className="space-y-1">
                             {hasChildren ? (
                                 <>
                                     <div className={clsx(
