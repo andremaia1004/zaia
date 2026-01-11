@@ -135,6 +135,34 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
                                                 >
                                                     <MessageCircle className="w-4 h-4" />
                                                 </button>
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation()
+                                                        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+                                                            try {
+                                                                await appointmentService.delete(app.id)
+                                                                // Simple refresh:
+                                                                // In React 18 / Next.js app dir, router.refresh() is better but here we rely on prop update or local list.
+                                                                // MonthlyList calls fetchAppointments in useEffect.
+                                                                // We need to trigger it. But `fetchAppointments` is internal.
+                                                                // We can pass `onUpdate` prop if MonthlyList had it, or just use window.location.reload() (bad)
+                                                                // or force re-render.
+                                                                // MonthlyList has `fetchAppointments`. We can extract logic or just trigger it.
+                                                                // But wait, `handleSuccess` in parent `AgendaPage` updates `refreshKey`.
+                                                                // But we are inside MonthlyList.
+                                                                // We can just call `fetchAppointments()`? Yes it's available in scope!
+                                                                fetchAppointments()
+                                                            } catch (error) {
+                                                                console.error(error)
+                                                                // toast.error('Erro ao excluir')
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="p-1.5 rounded-md hover:bg-red-100 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Excluir"
+                                                >
+                                                    <CalendarX2 className="w-4 h-4" />
+                                                </button>
                                                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{app.professional?.name}</span>
                                             </div>
                                             <div className="flex items-center gap-2">

@@ -143,6 +143,26 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
                                                         <Undo2 className="w-4 h-4" />
                                                     </button>
                                                 )}
+
+                                                <button
+                                                    onClick={async (e) => {
+                                                        e.stopPropagation()
+                                                        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+                                                            try {
+                                                                await appointmentService.delete(app.id)
+                                                                toast.success('Agendamento excluído')
+                                                                fetchAppointments()
+                                                            } catch (error) {
+                                                                console.error(error)
+                                                                toast.error('Erro ao excluir')
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:bg-slate-700/30 transition-colors"
+                                                    title="Excluir Agendamento"
+                                                >
+                                                    <CalendarX2 className="w-4 h-4" />
+                                                </button>
                                             </div>
 
                                             <div className="flex flex-col items-end gap-1 min-w-[100px]">

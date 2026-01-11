@@ -81,5 +81,15 @@ export const appointmentService = {
             .eq('id', id)
 
         if (error) throw error
+    },
+
+    async delete(id: string) {
+        const supabase = createClient()
+        const { error } = await supabase
+            .from('appointments')
+            .delete()
+            .eq('id', id)
+
+        if (error) throw error
     }
 }
