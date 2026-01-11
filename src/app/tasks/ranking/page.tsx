@@ -4,33 +4,34 @@ import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
 import { TrendingUp, Trophy, Award, Target, Hash, Percent, DollarSign, Store, User, Calendar, ChevronLeft, ChevronRight, Zap } from 'lucide-react'
 import { clsx } from 'clsx'
-import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, isSameWeek } from 'date-fns'
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, isSameMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function RankingPage() {
     const { profile, selectedStore } = useAuth()
     const [scores, setScores] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [view, setView] = useState<'general' | 'store'>('general')
     const [selectedDate, setSelectedDate] = useState(new Date())
 
-    const currentWeekStart = startOfWeek(selectedDate, { weekStartsOn: 1 })
-    const isCurrentWeek = isSameWeek(selectedDate, new Date(), { weekStartsOn: 1 })
+    const monthStart = startOfMonth(selectedDate)
+    const monthEnd = endOfMonth(selectedDate)
+    const isCurrentMonth = isSameMonth(selectedDate, new Date())
 
     useEffect(() => {
-        fetchScores()
+        fetchLiveScores()
     }, [selectedDate, profile, selectedStore])
 
-    const fetchScores = async () => {
+    const fetchLiveScores = async () => {
         try {
             setLoading(true)
             const supabase = createClient()
 
+            // Fetch ALL occurrences for the month to calculate live scores
             let query = supabase
-                .from('weekly_scores')
+                .from('task_occurrences')
                 .select('*, profiles:staff_id(name), stores(name)')
-                .eq('week_start_date', format(currentWeekStart, 'yyyy-MM-dd'))
-                .order('execution_rate', { ascending: false })
+                .gte('date', format(monthStart, 'yyyy-MM-dd'))
+                .lte('date', format(monthEnd, 'yyyy-MM-dd'))
 
             if (selectedStore?.id) {
                 query = query.eq('store_id', selectedStore.id)
@@ -38,10 +39,53 @@ export default function RankingPage() {
                 query = query.eq('store_id', profile.store_id)
             }
 
-            const { data, error } = await query
+            const { data: occurrences, error } = await query
 
             if (error) throw error
-            setScores(data || [])
+
+            // Aggregate scores by staff
+            const staffMap = new Map()
+
+            occurrences?.forEach(occ => {
+                const staffId = occ.staff_id
+                if (!staffMap.has(staffId)) {
+                    staffMap.set(staffId, {
+                        id: staffId,
+                        profiles: occ.profiles,
+                        stores: occ.stores,
+                        total_xp: 0,
+                        tasks_total: 0,
+                        tasks_done: 0,
+                        tasks_postponed: 0,
+                        tasks_delayed: 0,
+                    })
+                }
+
+                const stats = staffMap.get(staffId)
+                stats.tasks_total++
+
+                if (occ.status === 'FEITA') {
+                    stats.tasks_done++
+                    stats.total_xp += (occ.xp_reward || 10)
+                } else if (occ.status === 'ADIADA') {
+                    stats.tasks_postponed++
+                } else if (occ.status === 'ATRASA') {
+                    stats.tasks_delayed++
+                }
+            })
+
+            const computedScores = Array.from(staffMap.values()).map(stats => ({
+                ...stats,
+                execution_rate: stats.tasks_total > 0 ? (stats.tasks_done / stats.tasks_total) * 100 : 0
+            }))
+
+            // Sort by XP (desc), then Execution Rate (desc)
+            computedScores.sort((a, b) => {
+                if (b.total_xp !== a.total_xp) return b.total_xp - a.total_xp
+                return b.execution_rate - a.execution_rate
+            })
+
+            setScores(computedScores)
         } catch (error) {
             console.error('Error fetching scores:', error)
         } finally {
@@ -49,10 +93,10 @@ export default function RankingPage() {
         }
     }
 
-    const previousWeek = () => setSelectedDate(subWeeks(selectedDate, 1))
-    const nextWeek = () => setSelectedDate(addWeeks(selectedDate, 1))
+    const previousMonth = () => setSelectedDate(subMonths(selectedDate, 1))
+    const nextMonth = () => setSelectedDate(addMonths(selectedDate, 1))
 
-    if (loading) return <div className="p-8 text-slate-400">Calculando ranking...</div>
+    if (loading) return <div className="p-8 text-slate-400">Calculando ranking em tempo real...</div>
 
     return (
         <div className="p-8 max-w-7xl mx-auto">
@@ -60,22 +104,21 @@ export default function RankingPage() {
                 <div>
                     <div className="flex items-center gap-3 mb-2">
                         <Trophy className="w-8 h-8 text-amber-500 dark:text-amber-400" />
-                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Ranking de Performance</h1>
+                        <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Ranking XP</h1>
                     </div>
-                    <p className="text-slate-600 dark:text-slate-400">Classificação semanal baseada na execução das metas.</p>
+                    <p className="text-slate-600 dark:text-slate-400">Classificação mensal baseada em XP acumulado.</p>
                 </div>
 
                 <div className="flex items-center gap-4 bg-white/50 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/5">
-                    <button onClick={previousWeek} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
+                    <button onClick={previousMonth} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors">
                         <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                     </button>
-                    <div className="text-sm font-medium text-slate-900 dark:text-white min-w-[140px] text-center">
-                        <span className="block text-xs text-slate-500 uppercase">Semana de</span>
-                        {format(currentWeekStart, 'dd/MM/yyyy')}
+                    <div className="text-sm font-medium text-slate-900 dark:text-white min-w-[140px] text-center capitalize">
+                        {format(monthStart, 'MMMM yyyy', { locale: ptBR })}
                     </div>
                     <button
-                        onClick={nextWeek}
-                        disabled={isCurrentWeek}
+                        onClick={nextMonth}
+                        disabled={isCurrentMonth}
                         className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50 disabled:pointer-events-none"
                     >
                         <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
@@ -96,16 +139,16 @@ export default function RankingPage() {
                 <div className="glass-panel p-6 border border-emerald-500/20 bg-emerald-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-emerald-500/10 dark:bg-emerald-500/20 rounded-lg"><Award className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Bônus Atingidos</span>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Top Player</span>
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 dark:text-white">
-                        {scores.filter(s => s.met_bonus).length} <span className="text-sm font-normal text-slate-500 dark:text-slate-500 ml-2">colaboradores</span>
+                    <div className="text-xl font-bold text-slate-900 dark:text-white truncate">
+                        {scores.length > 0 ? scores[0].profiles?.name : '-'}
                     </div>
                 </div>
                 <div className="glass-panel p-6 border border-amber-500/20 bg-amber-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg"><Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">XP Total</span>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">XP no Mês</span>
                     </div>
                     <div className="text-3xl font-bold text-slate-900 dark:text-white">
                         {scores.reduce((acc, s) => acc + Number(s.total_xp || 0), 0).toLocaleString('pt-BR')} <span className="text-sm font-normal text-slate-500 dark:text-slate-500 ml-2">XP</span>
@@ -122,7 +165,7 @@ export default function RankingPage() {
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Loja</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">Execução</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">Tarefas</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">XP</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">XP Total</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -131,7 +174,7 @@ export default function RankingPage() {
                                 <td colSpan={6} className="px-6 py-12 text-center text-slate-500 dark:text-slate-400">
                                     <div className="flex flex-col items-center gap-3">
                                         <Trophy className="w-12 h-12 text-slate-300 dark:text-slate-600" />
-                                        <p>Nenhuma pontuação registrada para este período.</p>
+                                        <p>Nenhum XP registrado neste mês.</p>
                                     </div>
                                 </td>
                             </tr>
