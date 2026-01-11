@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
-import { TrendingUp, Trophy, Award, Target, Hash, Percent, DollarSign, Store, User, Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TrendingUp, Trophy, Award, Target, Hash, Percent, DollarSign, Store, User, Calendar, ChevronLeft, ChevronRight, Zap } from 'lucide-react'
 import { clsx } from 'clsx'
 import { format, startOfWeek, endOfWeek, subWeeks, addWeeks, isSameWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -104,11 +104,11 @@ export default function RankingPage() {
                 </div>
                 <div className="glass-panel p-6 border border-amber-500/20 bg-amber-500/5 transition-colors">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg"><DollarSign className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Total em Bônus</span>
+                        <div className="p-2 bg-amber-500/10 dark:bg-amber-500/20 rounded-lg"><Zap className="w-5 h-5 text-amber-600 dark:text-amber-400" /></div>
+                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">XP Total</span>
                     </div>
                     <div className="text-3xl font-bold text-slate-900 dark:text-white">
-                        R$ {scores.reduce((acc, s) => acc + Number(s.bonus_value), 0).toLocaleString('pt-BR')}
+                        {scores.reduce((acc, s) => acc + Number(s.total_xp || 0), 0).toLocaleString('pt-BR')} <span className="text-sm font-normal text-slate-500 dark:text-slate-500 ml-2">XP</span>
                     </div>
                 </div>
             </div>
@@ -122,7 +122,7 @@ export default function RankingPage() {
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Loja</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">Execução</th>
                             <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">Tarefas</th>
-                            <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">Bônus</th>
+                            <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase text-center">XP</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
@@ -199,14 +199,10 @@ export default function RankingPage() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        {score.met_bonus ? (
-                                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
-                                                <DollarSign className="w-3 h-3" />
-                                                R$ {Number(score.bonus_value).toFixed(0)}
-                                            </div>
-                                        ) : (
-                                            <span className="text-[10px] text-slate-500 uppercase font-medium">Não atingido</span>
-                                        )}
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-500 text-xs font-bold border border-amber-500/20">
+                                            <Zap className="w-3 h-3" />
+                                            {Number(score.total_xp || 0).toLocaleString('pt-BR')} XP
+                                        </div>
                                     </td>
                                 </tr>
                             ))

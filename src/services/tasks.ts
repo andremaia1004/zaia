@@ -18,17 +18,25 @@ export interface TaskOccurrence {
     store_id: string
     requires_proof?: boolean
     default_due_time?: string
+    xp_reward: number
+    task_templates?: {
+        title: string
+        recurrence: string
+        default_due_time: string
+    }
 }
 
 export interface TaskTemplate {
     id: string
     title: string
     description?: string
-    recurrence: string
+    recurrence: 'daily' | 'weekly' | 'monthly' | 'once'
     target_value: number
     requires_proof: boolean
     default_due_time?: string
-    created_at: string
+    created_at?: string
+    active: boolean
+    xp_reward: number
 }
 
 export const tasksService = {

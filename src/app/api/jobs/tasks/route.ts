@@ -35,7 +35,7 @@ async function generateWeeklyOccurrences() {
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value, default_due_time)
+            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward)
         `)
         .eq('active', true)
         .in('task_templates.recurrence', ['daily', 'weekly', 'once'])
@@ -54,39 +54,48 @@ async function generateWeeklyOccurrences() {
         const template = assign.task_templates
         if (template.recurrence === 'daily') {
             for (const day of weekDays) {
+                const dueAt = withDueAt(day, template.default_due_time)
+                const isOverdue = dueAt && new Date(dueAt) < new Date()
                 occurrences.push({
                     assignment_id: assign.id,
                     title: template.title,
                     date: format(day, 'yyyy-MM-dd'),
-                    due_at: withDueAt(day, template.default_due_time),
+                    due_at: dueAt,
                     target_value: template.target_value,
                     staff_id: assign.staff_id,
                     store_id: assign.store_id,
-                    status: 'PENDENTE'
+                    status: isOverdue ? 'ATRASA' : 'PENDENTE',
+                    xp_reward: template.xp_reward || 10
                 })
             }
         } else if (template.recurrence === 'weekly') {
+            const dueAt = withDueAt(weekStart, template.default_due_time)
+            const isOverdue = dueAt && new Date(dueAt) < new Date()
             occurrences.push({
                 assignment_id: assign.id,
                 title: template.title,
                 date: format(weekStart, 'yyyy-MM-dd'),
-                due_at: withDueAt(weekStart, template.default_due_time),
+                due_at: dueAt,
                 target_value: template.target_value,
                 staff_id: assign.staff_id,
                 store_id: assign.store_id,
-                status: 'PENDENTE'
+                status: isOverdue ? 'ATRASA' : 'PENDENTE',
+                xp_reward: template.xp_reward || 10
             })
         } else if (template.recurrence === 'once') {
             // "once" tasks in weekly job are treated as "this week only" if not already created
+            const dueAt = withDueAt(weekStart, template.default_due_time)
+            const isOverdue = dueAt && new Date(dueAt) < new Date()
             occurrences.push({
                 assignment_id: assign.id,
                 title: template.title,
                 date: format(weekStart, 'yyyy-MM-dd'),
-                due_at: withDueAt(weekStart, template.default_due_time),
+                due_at: dueAt,
                 target_value: template.target_value,
                 staff_id: assign.staff_id,
                 store_id: assign.store_id,
-                status: 'PENDENTE'
+                status: isOverdue ? 'ATRASA' : 'PENDENTE',
+                xp_reward: template.xp_reward || 10
             })
         }
     }
@@ -110,7 +119,7 @@ async function generateMonthlyOccurrences() {
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value, default_due_time)
+            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward)
         `)
         .eq('active', true)
         .eq('task_templates.recurrence', 'monthly')
@@ -125,7 +134,8 @@ async function generateMonthlyOccurrences() {
         target_value: assign.task_templates.target_value,
         staff_id: assign.staff_id,
         store_id: assign.store_id,
-        status: 'PENDENTE'
+        status: 'PENDENTE',
+        xp_reward: assign.task_templates.xp_reward || 10
     }))
 
     if (occurrences.length > 0) {
@@ -177,10 +187,14 @@ async function calculatePreviousWeekScores() {
         const total = tasks.length
         const rate = total > 0 ? (done / total) * 100 : 0
 
-        // Bonus logic: "cumprir integralmente as metas diárias da semana e metas mensais dentro do mês"
-        // Simplified for weekly score: all weekly tasks done.
-        const metBonus = done === total && total > 0
-        const bonusValue = metBonus ? 100 : 0
+        // XP Calculation: Sum of XP from completed tasks
+        const exp = tasks
+            .filter(t => t.status === 'FEITA')
+            .reduce((sum, t) => sum + (t.xp_reward || 10), 0)
+
+        // Previous bonus logic deprecated
+        const metBonus = false
+        const bonusValue = 0
 
         scores.push({
             staff_id: staffId,
@@ -191,7 +205,8 @@ async function calculatePreviousWeekScores() {
             tasks_postponed: postponed,
             tasks_delayed: delayed,
             met_bonus: metBonus,
-            bonus_value: bonusValue
+            bonus_value: bonusValue,
+            total_xp: exp
         })
     }
 

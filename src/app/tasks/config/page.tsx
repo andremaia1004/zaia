@@ -20,7 +20,7 @@ export default function ConfigTasksPage() {
     const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '' })
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [showTemplateModal, setShowTemplateModal] = useState(false)
-    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '' })
+    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10 })
     const [assigning, setAssigning] = useState(false)
 
     useEffect(() => {
@@ -187,7 +187,7 @@ export default function ConfigTasksPage() {
 
             await tasksService.createTemplate(templateToSave)
             setShowTemplateModal(false)
-            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '' })
+            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10 })
             toast.success('Modelo de tarefa criado!')
             fetchData()
         } catch (error: any) {
@@ -254,6 +254,7 @@ export default function ConfigTasksPage() {
                                 <h3 className="font-medium text-slate-900 dark:text-white pr-6">{template.title}</h3>
                                 <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-500">
                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {template.recurrence}</span>
+                                    <span className="flex items-center gap-1 font-bold text-amber-500">XP: {template.xp_reward || 10}</span>
                                     <span className="flex items-center gap-1 font-bold text-zaia-600 dark:text-zaia-400">Meta: {template.target_value}</span>
                                 </div>
                             </div>
@@ -425,6 +426,15 @@ export default function ConfigTasksPage() {
                                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
                                     value={newTemplate.target_value}
                                     onChange={(e) => setNewTemplate({ ...newTemplate, target_value: parseInt(e.target.value) || 1 })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Recompensa (XP)</label>
+                                <input
+                                    type="number"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                    value={newTemplate.xp_reward}
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, xp_reward: parseInt(e.target.value) || 0 })}
                                 />
                             </div>
                             <div className="flex items-center gap-3 py-2">
