@@ -58,11 +58,25 @@ export default function MyWeekPage() {
             return
         }
 
+        // OPTIMISTIC UPDATE
+        const prevOccurrences = [...occurrences]
+        const updatedOcc = { ...occ, current_value: occ.current_value + 1 }
+
+        if (updatedOcc.current_value >= updatedOcc.target_value) {
+            updatedOcc.status = 'FEITA'
+        }
+
+        setOccurrences(prev => prev.map(o => o.id === occ.id ? updatedOcc : o))
+
         try {
             const updated = await tasksService.incrementCounter(occ.id, occ.current_value, occ.target_value)
+            // Sync with server response
             setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o))
         } catch (error) {
             console.error('Error incrementing counter:', error)
+            // Revert on error
+            setOccurrences(prevOccurrences)
+            // Ideally show a toast here
         }
     }
 
@@ -73,11 +87,17 @@ export default function MyWeekPage() {
             return
         }
 
+        // OPTIMISTIC UPDATE
+        const prevOccurrences = [...occurrences]
+        const updatedOcc = { ...occ, status: 'FEITA' as any, current_value: occ.target_value }
+        setOccurrences(prev => prev.map(o => o.id === occ.id ? updatedOcc : o))
+
         try {
             const updated = await tasksService.updateOccurrence(occ.id, { status: 'FEITA', current_value: occ.target_value })
             setOccurrences(prev => prev.map(o => o.id === updated.id ? updated : o))
         } catch (error) {
             console.error('Error marking as done:', error)
+            setOccurrences(prevOccurrences)
         }
     }
 
