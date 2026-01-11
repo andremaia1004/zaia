@@ -41,6 +41,7 @@ interface AppointmentModalProps {
 export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, initialData }: AppointmentModalProps) {
     const { selectedStore } = useAuth()
     const [loading, setLoading] = useState(false)
+    const [loadingProfessionals, setLoadingProfessionals] = useState(false)
     const [professionals, setProfessionals] = useState<Professional[]>([])
 
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppointmentFormData>({
@@ -57,8 +58,11 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
     })
 
     useEffect(() => {
-        if (isOpen) {
-            professionalService.getAllActive(selectedStore?.id).then(setProfessionals)
+        if (isOpen && selectedStore?.id) {
+            setLoadingProfessionals(true)
+            professionalService.getAllActive(selectedStore.id)
+                .then(setProfessionals)
+                .finally(() => setLoadingProfessionals(false))
 
             setValue('date', preselectedDate ? format(preselectedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'))
 
@@ -67,15 +71,11 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 setValue('client_phone', initialData.client_phone || '')
                 setValue('notes', initialData.notes || '')
                 setValue('origin', initialData.origin || 'WhatsApp')
-            } else {
-                // If opening without initial data (except date), ensure clean slate for other fields if needed, 
-                // though reset() usually handles form clearing on close/submit if configured.
-                // For now, manual sets are fine, or we could reset completely.
             }
         } else {
-            reset() // Reset form when modal closes
+            if (!isOpen) reset()
         }
-    }, [isOpen, initialData, preselectedDate, setValue, reset])
+    }, [isOpen, selectedStore, initialData, preselectedDate, setValue, reset])
 
     const onSubmit = async (data: AppointmentFormData) => {
         setLoading(true)
@@ -165,8 +165,9 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                     <select
                         className="input-field text-slate-900 dark:text-white bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10"
                         {...register('professional_id')}
+                        disabled={loadingProfessionals}
                     >
-                        <option value="">Selecione...</option>
+                        <option value="">{loadingProfessionals ? 'Carregando...' : 'Selecione...'}</option>
                         {professionals.map(p => (
                             <option key={p.id} value={p.id}>{p.name} - {p.role}</option>
                         ))}
