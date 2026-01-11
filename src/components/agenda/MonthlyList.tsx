@@ -7,7 +7,7 @@ import { appointmentService } from '@/services/appointments'
 import { type Appointment } from '@/services/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppointmentDetailsModal } from '@/components/agenda/AppointmentDetailsModal'
-import { CalendarX2, Calendar, Loader2 } from 'lucide-react'
+import { CalendarX2, Calendar, Loader2, MessageCircle } from 'lucide-react'
 
 export function MonthlyList({ currentDate }: { currentDate: Date }) {
     const { selectedStore, profile } = useAuth()
@@ -122,6 +122,19 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
 
                                         <div className="flex flex-col items-end gap-2">
                                             <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        const cleanPhone = app.client?.phone.replace(/\D/g, '') || ''
+                                                        const message = `Olá ${app.client?.name || ''}, tudo bem? Gostaríamos de confirmar seu agendamento na *Zaia Ótica*.`
+                                                        const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+                                                        window.open(url, '_blank')
+                                                    }}
+                                                    className="p-1.5 rounded-md hover:bg-green-100 text-green-600 dark:text-green-400 dark:hover:bg-green-900/30 transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Enviar WhatsApp"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                </button>
                                                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">{app.professional?.name}</span>
                                             </div>
                                             <div className="flex items-center gap-2">

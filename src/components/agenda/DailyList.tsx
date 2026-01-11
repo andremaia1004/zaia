@@ -6,7 +6,8 @@ import { cn } from '@/lib/utils'
 import { appointmentService } from '@/services/appointments'
 import { type Appointment } from '@/services/types'
 import { AppointmentDetailsModal } from '@/components/agenda/AppointmentDetailsModal'
-import { CalendarX2 } from 'lucide-react'
+import { CalendarX2, MessageCircle, Check, X, DollarSign, Undo2 } from 'lucide-react'
+import { toast } from 'sonner'
 
 export function DailyList({ currentDate }: { currentDate: Date }) {
     const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -42,6 +43,26 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
         }
     }
 
+    const handleStatusChange = async (e: React.MouseEvent, id: string, newStatus: string) => {
+        e.stopPropagation() // Prevent opening modal
+        try {
+            await appointmentService.updateStatus(id, newStatus)
+            toast.success(`Status atualizado para ${newStatus}`)
+            fetchAppointments()
+        } catch (error) {
+            console.error(error)
+            toast.error('Erro ao atualizar status')
+        }
+    }
+
+    const handleWhatsApp = (e: React.MouseEvent, phone: string, clientName: string) => {
+        e.stopPropagation()
+        const cleanPhone = phone.replace(/\D/g, '')
+        const message = `Olá ${clientName}, tudo bem? Gostaríamos de confirmar seu agendamento na *Zaia Ótica*.`
+        const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(message)}`
+        window.open(url, '_blank')
+    }
+
     if (loading) {
         return <div className="p-8 text-center text-slate-500 animate-pulse">Carregando agenda...</div>
     }
@@ -72,27 +93,71 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
                                     <div
                                         key={app.id}
                                         onClick={() => setSelectedAppointment(app)}
-                                        className="group relative flex items-center justify-between bg-white dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-white/5 hover:border-zaia-500/30 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1 cursor-pointer shadow-sm"
+                                        className="group relative flex flex-col sm:flex-row sm:items-center justify-between bg-white dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200 dark:border-white/5 hover:border-zaia-500/30 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:translate-x-1 cursor-pointer shadow-sm gap-4 sm:gap-0"
                                     >
                                         <div className="flex flex-col">
-                                            <span className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-200 transition-colors">{app.client?.name || 'Cliente sem nome'}</span>
-                                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                                            <span className="font-medium text-slate-900 dark:text-white group-hover:text-zaia-600 dark:group-hover:text-zaia-200 transition-colors text-base">{app.client?.name || 'Cliente sem nome'}</span>
+                                            <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mt-1">
                                                 <span>{app.client?.phone}</span>
                                                 {app.origin && <span className="text-xs bg-slate-100 dark:bg-slate-700 px-1.5 rounded text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/5">{app.origin}</span>}
                                             </div>
                                         </div>
 
-                                        <div className="flex flex-col items-end gap-1">
-                                            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{app.professional?.name}</span>
-                                            <div className="flex items-center gap-2">
-                                                <StatusBadge status={app.status} />
-                                                {app.result && app.result !== 'NAO_DEFINIDO' && (
-                                                    <span className={cn("text-xs px-2 py-0.5 rounded border font-bold",
-                                                        app.result === 'COMPROU' ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10" : "border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/10"
-                                                    )}>
-                                                        {app.result === 'COMPROU' ? '$$$' : 'Zero'}
-                                                    </span>
+                                        <div className="flex items-center gap-3 self-end sm:self-auto">
+                                            {/* Quick Actions */}
+                                            <div className="flex items-center gap-1 mr-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
+                                                <button
+                                                    onClick={(e) => handleWhatsApp(e, app.client?.phone || '', app.client?.name || '')}
+                                                    className="p-1.5 rounded-md hover:bg-green-100 text-green-600 dark:text-green-400 dark:hover:bg-green-900/30 transition-colors"
+                                                    title="Enviar WhatsApp"
+                                                >
+                                                    <MessageCircle className="w-4 h-4" />
+                                                </button>
+
+                                                {app.status !== 'COMPARECEU' && (
+                                                    <button
+                                                        onClick={(e) => handleStatusChange(e, app.id, 'COMPARECEU')}
+                                                        className="p-1.5 rounded-md hover:bg-blue-100 text-blue-600 dark:text-blue-400 dark:hover:bg-blue-900/30 transition-colors"
+                                                        title="Marcar como Compareceu"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
                                                 )}
+
+                                                {app.status !== 'FALTOU' && app.status !== 'CANCELADO' && (
+                                                    <button
+                                                        onClick={(e) => handleStatusChange(e, app.id, 'FALTOU')}
+                                                        className="p-1.5 rounded-md hover:bg-red-100 text-red-600 dark:text-red-400 dark:hover:bg-red-900/30 transition-colors"
+                                                        title="Marcar como Faltou"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                )}
+
+                                                {(app.status === 'FALTOU' || app.status === 'CANCELADO') && (
+                                                    <button
+                                                        onClick={(e) => handleStatusChange(e, app.id, 'AGENDADO')}
+                                                        className="p-1.5 rounded-md hover:bg-slate-100 text-slate-600 dark:text-slate-400 dark:hover:bg-slate-700/30 transition-colors"
+                                                        title="Desfazer / Reagendar"
+                                                    >
+                                                        <Undo2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            <div className="flex flex-col items-end gap-1 min-w-[100px]">
+                                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">{app.professional?.name}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <StatusBadge status={app.status} />
+                                                    {app.result && app.result !== 'NAO_DEFINIDO' && (
+                                                        <span className={cn("text-xs px-2 py-0.5 rounded border font-bold flex items-center gap-1",
+                                                            app.result === 'COMPROU' ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-500/10" : "border-red-500/30 text-red-600 dark:text-red-400 bg-red-500/10"
+                                                        )}>
+                                                            {app.result === 'COMPROU' ? <DollarSign className="w-3 h-3" /> : null}
+                                                            {app.result === 'COMPROU' ? 'Venda' : 'Zero'}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -109,24 +174,6 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
                 appointment={selectedAppointment}
                 onUpdate={() => {
                     fetchAppointments()
-                    // Keep modal open to show updated state? Or close?
-                    // Let's reload data. The modal uses the `appointment` prop which is local state.
-                    // We need to update local state `selectedAppointment` as well or just close.
-                    // Ideally, we re-fetch effectively.
-                    // For now, let's just re-fetch LIST. The modal is controlled by `selectedAppointment`.
-                    // If we want the modal to reflect changes immediately we'd need to update selectedAppointment too.
-                    // But wait, `fetchAppointments` updates the list. 
-                    // Let's close the modal on major status changes or just re-fetch.
-                    // For better UX, let's close on success for now, or just re-fetch and rely on list update 
-                    // but the modal might be stale.
-                    // Improvement: Update selectedAppointment with new data from list?
-                    // Simple fix: fetchAppointments() then update selectedAppointment manually or just close it?
-                    // User might want to toggle status then toggle result.
-                    // I'll leave it open but re-fetch. I probably need to update the `selectedAppointment` object 
-                    // to reflect the UI change immediately to avoid staleness if I don't close it.
-                    // I will add a small logic to update `selectedAppointment` inside `onUpdate`?
-                    // No, `onUpdate` is void.
-                    // I will make `fetchAppointments` update `selectedAppointment` if it matches.
                 }}
             />
         </div>
