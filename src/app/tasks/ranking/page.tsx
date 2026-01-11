@@ -41,6 +41,8 @@ export default function RankingPage() {
 
             const { data: occurrences, error } = await query
 
+            console.log('Ranking fetch result:', { count: occurrences?.length, error, store: selectedStore, profile })
+
             if (error) throw error
 
             // Aggregate scores by staff

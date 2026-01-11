@@ -1,0 +1,45 @@
+{
+  "total": 9,
+  "done": 5,
+  "sample": [
+    {
+      "id": "25098364-72c2-44e1-8024-67bafb423635",
+      "assignment_id": "c0dcc5ff-ca8d-4fa6-8446-1d469a060a62",
+      "title": "Ações Externas",
+      "date": "2026-01-01",
+      "status": "FEITA",
+      "current_value": 1,
+      "target_value": 1,
+      "postponed_to": null,
+      "postponed_reason": null,
+      "proof_url": null,
+      "proof_description": null,
+      "due_at": null,
+      "staff_id": "66f85316-8639-4a9e-9d1c-f708772bcd29",
+      "store_id": "a05e1426-4d45-4b9f-84fa-2f507849e05f",
+      "created_at": "2026-01-10T22:16:01.757712+00:00",
+      "updated_at": "2026-01-10T22:16:01.757712+00:00",
+      "xp_reward": 10
+    },
+    {
+      "id": "3578f2a7-ae4a-4636-ae72-9e8f8f4de61d",
+      "assignment_id": "a5e45338-c627-43d2-bcfc-06fbe6d7eaa4",
+      "title": "Ações Externas",
+      "date": "2026-01-01",
+      "status": "FEITA",
+      "current_value": 1,
+      "target_value": 1,
+      "postponed_to": null,
+      "postponed_reason": null,
+      "proof_url": null,
+      "proof_description": null,
+      "due_at": null,
+      "staff_id": "66f85316-8639-4a9e-9d1c-f708772bcd29",
+      "store_id": "a05e1426-4d45-4b9f-84fa-2f507849e05f",
+      "created_at": "2026-01-10T22:16:01.757712+00:00",
+      "updated_at": "2026-01-10T22:16:01.757712+00:00",
+      "xp_reward": 10
+    }
+  ],
+  "hasXpReward": true
+}
