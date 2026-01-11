@@ -39,10 +39,13 @@ interface AppointmentModalProps {
 }
 
 export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, initialData }: AppointmentModalProps) {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [loading, setLoading] = useState(false)
     const [loadingProfessionals, setLoadingProfessionals] = useState(false)
     const [professionals, setProfessionals] = useState<Professional[]>([])
+
+    // Determine the target store: selected store (for super admin) or user's assigned store
+    const targetStoreId = selectedStore?.id || profile?.store_id
 
     const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<AppointmentFormData>({
         resolver: zodResolver(appointmentSchema),
@@ -58,9 +61,9 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
     })
 
     useEffect(() => {
-        if (isOpen && selectedStore?.id) {
+        if (isOpen && targetStoreId) {
             setLoadingProfessionals(true)
-            professionalService.getAllActive(selectedStore.id)
+            professionalService.getAllActive(targetStoreId)
                 .then(setProfessionals)
                 .finally(() => setLoadingProfessionals(false))
 
@@ -75,7 +78,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
         } else {
             if (!isOpen) reset()
         }
-    }, [isOpen, selectedStore, initialData, preselectedDate, setValue, reset])
+    }, [isOpen, targetStoreId, initialData, preselectedDate, setValue, reset])
 
     const onSubmit = async (data: AppointmentFormData) => {
         setLoading(true)
@@ -89,7 +92,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                     name: data.client_name,
                     phone: data.client_phone,
                     email: data.client_email || undefined,
-                    store_id: selectedStore?.id
+                    store_id: targetStoreId
                 })
             }
 
@@ -104,7 +107,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 origin: data.origin,
                 status: 'AGENDADO',
                 result: 'NAO_DEFINIDO',
-                store_id: selectedStore?.id
+                store_id: targetStoreId
             })
 
             // 3. Auto-create/Update Lead in Pipeline
@@ -114,7 +117,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                     status: 'AGENDADO',
                     channel: data.origin,
                     interest: 'Consulta Geral',
-                    store_id: selectedStore?.id
+                    store_id: targetStoreId
                 })
             } catch (err) {
                 console.error("Failed to sync with pipeline", err)
