@@ -7,6 +7,7 @@ import { appointmentService } from '@/services/appointments'
 import { type Appointment } from '@/services/types'
 import { useAuth } from '@/contexts/AuthContext'
 import { AppointmentDetailsModal } from '@/components/agenda/AppointmentDetailsModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { CalendarX2, Calendar, Loader2, MessageCircle } from 'lucide-react'
 
 export function MonthlyList({ currentDate }: { currentDate: Date }) {
@@ -14,6 +15,8 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+    const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null)
+    const [deleteLoading, setDeleteLoading] = useState(false)
 
     const start = startOfMonth(currentDate)
     const end = endOfMonth(currentDate)
@@ -49,6 +52,21 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
             console.error(err)
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!appointmentToDelete) return
+        setDeleteLoading(true)
+        try {
+            await appointmentService.delete(appointmentToDelete.id)
+            // fetchAppointments is available in scope
+            fetchAppointments()
+            setAppointmentToDelete(null)
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setDeleteLoading(false)
         }
     }
 
@@ -136,27 +154,9 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
                                                     <MessageCircle className="w-4 h-4" />
                                                 </button>
                                                 <button
-                                                    onClick={async (e) => {
+                                                    onClick={(e) => {
                                                         e.stopPropagation()
-                                                        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
-                                                            try {
-                                                                await appointmentService.delete(app.id)
-                                                                // Simple refresh:
-                                                                // In React 18 / Next.js app dir, router.refresh() is better but here we rely on prop update or local list.
-                                                                // MonthlyList calls fetchAppointments in useEffect.
-                                                                // We need to trigger it. But `fetchAppointments` is internal.
-                                                                // We can pass `onUpdate` prop if MonthlyList had it, or just use window.location.reload() (bad)
-                                                                // or force re-render.
-                                                                // MonthlyList has `fetchAppointments`. We can extract logic or just trigger it.
-                                                                // But wait, `handleSuccess` in parent `AgendaPage` updates `refreshKey`.
-                                                                // But we are inside MonthlyList.
-                                                                // We can just call `fetchAppointments()`? Yes it's available in scope!
-                                                                fetchAppointments()
-                                                            } catch (error) {
-                                                                console.error(error)
-                                                                // toast.error('Erro ao excluir')
-                                                            }
-                                                        }
+                                                        setAppointmentToDelete(app)
                                                     }}
                                                     className="p-1.5 rounded-md hover:bg-red-100 text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
                                                     title="Excluir"
@@ -194,6 +194,17 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
                     // we might want to close it or keep it open. 
                     // The original list logic just re-fetched. Let's stick to that.
                 }}
+            />
+
+            <ConfirmModal
+                isOpen={!!appointmentToDelete}
+                onClose={() => setAppointmentToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Excluir Agendamento"
+                description={`Tem certeza que deseja excluir o agendamento de ${appointmentToDelete?.client?.name}? Esta ação não pode ser desfeita.`}
+                confirmText="Excluir"
+                variant="danger"
+                loading={deleteLoading}
             />
         </div>
     )

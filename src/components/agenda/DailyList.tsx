@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { appointmentService } from '@/services/appointments'
 import { type Appointment } from '@/services/types'
 import { AppointmentDetailsModal } from '@/components/agenda/AppointmentDetailsModal'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { CalendarX2, MessageCircle, Check, X, DollarSign, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -13,6 +14,8 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
     const [appointments, setAppointments] = useState<Appointment[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+    const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null)
+    const [deleteLoading, setDeleteLoading] = useState(false)
 
     const start = startOfWeek(currentDate, { weekStartsOn: 1 })
     const end = endOfWeek(currentDate, { weekStartsOn: 1 })
@@ -52,6 +55,22 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
         } catch (error) {
             console.error(error)
             toast.error('Erro ao atualizar status')
+        }
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!appointmentToDelete) return
+        setDeleteLoading(true)
+        try {
+            await appointmentService.delete(appointmentToDelete.id)
+            toast.success('Agendamento excluído')
+            fetchAppointments()
+            setAppointmentToDelete(null)
+        } catch (error) {
+            console.error(error)
+            toast.error('Erro ao excluir')
+        } finally {
+            setDeleteLoading(false)
         }
     }
 
@@ -145,18 +164,9 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
                                                 )}
 
                                                 <button
-                                                    onClick={async (e) => {
+                                                    onClick={(e) => {
                                                         e.stopPropagation()
-                                                        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
-                                                            try {
-                                                                await appointmentService.delete(app.id)
-                                                                toast.success('Agendamento excluído')
-                                                                fetchAppointments()
-                                                            } catch (error) {
-                                                                console.error(error)
-                                                                toast.error('Erro ao excluir')
-                                                            }
-                                                        }
+                                                        setAppointmentToDelete(app)
                                                     }}
                                                     className="p-1.5 rounded-md hover:bg-slate-100 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:bg-slate-700/30 transition-colors"
                                                     title="Excluir Agendamento"
@@ -188,13 +198,16 @@ export function DailyList({ currentDate }: { currentDate: Date }) {
                 )
             })}
 
-            <AppointmentDetailsModal
-                isOpen={!!selectedAppointment}
-                onClose={() => setSelectedAppointment(null)}
-                appointment={selectedAppointment}
-                onUpdate={() => {
-                    fetchAppointments()
-                }}
+
+            <ConfirmModal
+                isOpen={!!appointmentToDelete}
+                onClose={() => setAppointmentToDelete(null)}
+                onConfirm={handleConfirmDelete}
+                title="Excluir Agendamento"
+                description={`Tem certeza que deseja excluir o agendamento de ${appointmentToDelete?.client?.name}? Esta ação não pode ser desfeita.`}
+                confirmText="Excluir"
+                variant="danger"
+                loading={deleteLoading}
             />
         </div>
     )
