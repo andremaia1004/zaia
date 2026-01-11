@@ -7,6 +7,7 @@ import type { Appointment, Professional } from '@/services/types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Pencil, Save, X } from 'lucide-react'
+import { toast } from 'sonner'
 
 interface AppointmentDetailsModalProps {
     isOpen: boolean
@@ -84,7 +85,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
             await appointmentService.update(appointment.id, updates)
 
             onUpdate()
-            if (newStatus === 'CANCELADO' || newStatus === 'FALTOU') {
+            if (newStatus === 'CANCELADO' || newStatus === 'FALTOU' || newStatus === 'AGENDADO') {
                 onClose()
             }
         } catch (error) {
@@ -106,10 +107,11 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                 result: 'NAO_DEFINIDO' // Reset result too just in case
             })
             onUpdate() // List updates
+            toast.success('Agendamento reagendado!')
             onClose()  // Close modal as it moved
         } catch (error) {
             console.error(error)
-            alert('Erro ao remarcar')
+            toast.error('Erro ao remarcar')
         } finally {
             setLoading(false)
         }
@@ -134,8 +136,11 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
         try {
             await appointmentService.update(appointment.id, { notes: reason })
             onUpdate()
+            toast.success('Observação salva!')
+            onClose()
         } catch (error) {
             console.error(error)
+            toast.error('Erro ao salvar observação')
         }
     }
 
@@ -307,7 +312,8 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                                         .then(() => {
                                                             onUpdate()
                                                             setLoading(false)
-                                                            alert('Valor salvo!')
+                                                            toast.success('Valor salvo!')
+                                                            onClose()
                                                         })
                                                 }
                                             }}
