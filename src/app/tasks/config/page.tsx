@@ -133,8 +133,14 @@ export default function ConfigTasksPage() {
 
             console.log('Assignment created successfully:', data)
 
-            // Trigger task generation job (non-blocking)
-            fetch('/api/jobs/tasks?type=weekly', { method: 'POST' })
+            console.log('Assignment created successfully:', data)
+
+            // Trigger task generation job based on recurrence
+            const template = templates.find(t => t.id === newAssignment.template_id)
+            const jobType = template?.recurrence === 'monthly' ? 'monthly' : 'weekly'
+
+            console.log(`Triggering ${jobType} task generation...`)
+            fetch(`/api/jobs/tasks?type=${jobType}`, { method: 'POST' })
                 .catch(err => console.error('Error triggering job:', err))
 
             setShowAssignModal(false)
