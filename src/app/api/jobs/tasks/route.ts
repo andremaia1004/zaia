@@ -80,13 +80,30 @@ async function generateWeeklyOccurrences() {
             return new Date(`${dateTimeStr}-03:00`).toISOString() // Hardcoded BRT offset for simplicity or use date-fns-tz format
         }
 
+        // Check scheduled_date (Start Date or Specific Date)
+        const scheduledDateStr = assign.scheduled_date
+        const scheduledDate = scheduledDateStr ? new Date(scheduledDateStr + 'T00:00:00') : null
+
         if (template.recurrence === 'daily') {
             for (const day of weekDays) {
                 const dayStr = format(day, 'yyyy-MM-dd')
-                const dueAt = getDueAtIso(dayStr, template.default_due_time)
 
-                // Overdue logic: Check if Now (Brazil) > dueAt (Brazil)
-                // Actually dueAt is ISO.
+                // Skip if day is before scheduled start date
+                if (scheduledDate && day < scheduledDate) continue
+
+                // Calculate Due At
+                let dueAt = getDueAtIso(dayStr, template.default_due_time)
+                if (assign.custom_deadline) {
+                    // If custom deadline is set, use it directly (assuming it applies to the single occurrence or overrides)
+                    // For daily tasks, a specific custom_deadline might be weird if it's static for all days. 
+                    // Usually "Deadline" on an assignment implies the deadline for the task. 
+                    // If it's daily, maybe it doesn't make sense to have a fixed timestamp for all days? 
+                    // But adhering to request: "colocar data e prazo".
+                    // If user sets a specific deadline, we use it. 
+                    dueAt = assign.custom_deadline
+                }
+
+                // Overdue logic
                 const isOverdue = dueAt && new Date(dueAt) < nowUtc
 
                 occurrences.push({
@@ -103,7 +120,13 @@ async function generateWeeklyOccurrences() {
             }
         } else if (template.recurrence === 'weekly') {
             const weekStartStr = format(weekStart, 'yyyy-MM-dd')
-            const dueAt = getDueAtIso(weekStartStr, template.default_due_time)
+
+            // Skip if week start is before scheduled date
+            if (scheduledDate && weekStart < scheduledDate) continue
+
+            let dueAt = getDueAtIso(weekStartStr, template.default_due_time)
+            if (assign.custom_deadline) dueAt = assign.custom_deadline
+
             const isOverdue = dueAt && new Date(dueAt) < nowUtc
 
             occurrences.push({
@@ -118,11 +141,26 @@ async function generateWeeklyOccurrences() {
                 xp_reward: template.xp_reward || 10
             })
         } else if (template.recurrence === 'once') {
-            // "once" tasks: Create for "today" (or week start) if not exists
-            // Better: Create for Today if generated daily, or Week Start if generated weekly.
-            // Keeping logic aligned with Weekly job:
-            const targetDateStr = format(weekStart, 'yyyy-MM-dd')
-            const dueAt = getDueAtIso(targetDateStr, template.default_due_time)
+            // "once" tasks: 
+            // If scheduled_date is provided, use IT as the date.
+            // Check if that date falls within the current processing week?
+            // The job generates for "this week". If scheduled date is next week, we shouldn't generate it now?
+            // Or if passed, generate it?
+
+            let targetDateStr = format(weekStart, 'yyyy-MM-dd')
+
+            if (scheduledDateStr) {
+                // Check if scheduledDate is within the current week interval processing
+                // weekDays contains all days of the current week
+                const isInWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === scheduledDateStr)
+                if (!isInWeek) continue // Skip if the scheduled date is not in this week
+
+                targetDateStr = scheduledDateStr
+            }
+
+            let dueAt = getDueAtIso(targetDateStr, template.default_due_time)
+            if (assign.custom_deadline) dueAt = assign.custom_deadline
+
             const isOverdue = dueAt && new Date(dueAt) < nowUtc
 
             occurrences.push({

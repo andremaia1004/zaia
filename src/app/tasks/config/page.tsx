@@ -17,7 +17,7 @@ export default function ConfigTasksPage() {
     const [stores, setStores] = useState<any[]>([])
     const [assignments, setAssignments] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '' })
+    const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '', scheduled_date: '', custom_deadline: '' })
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [showTemplateModal, setShowTemplateModal] = useState(false)
     const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10 })
@@ -146,7 +146,7 @@ export default function ConfigTasksPage() {
             setShowAssignModal(false)
             toast.success('Tarefa atribuída com sucesso!')
             fetchData()
-            setNewAssignment({ template_id: '', staff_id: '', store_id: selectedStore?.id || '' })
+            setNewAssignment({ template_id: '', staff_id: '', store_id: selectedStore?.id || '', scheduled_date: '', custom_deadline: '' })
         } catch (error: any) {
             console.error('Failed to create assignment:', error)
             const detail = error.details || error.message || 'Erro de permissão ou conexão'
@@ -220,7 +220,9 @@ export default function ConfigTasksPage() {
                         setNewAssignment({
                             template_id: '',
                             staff_id: '',
-                            store_id: selectedStore?.id || ''
+                            store_id: selectedStore?.id || '',
+                            scheduled_date: '',
+                            custom_deadline: ''
                         })
                         setShowAssignModal(true)
                     }}
@@ -358,6 +360,29 @@ export default function ConfigTasksPage() {
                                     <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione o staff</option>
                                     {staff.map(u => <option key={u.id} value={u.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{u.name}</option>)}
                                 </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Data Programada (Opcional)</label>
+                                    <input
+                                        type="date"
+                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                        value={newAssignment.scheduled_date || ''}
+                                        onChange={(e) => setNewAssignment({ ...newAssignment, scheduled_date: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1">Deixe vazio para começar imediatamente</p>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo / Deadline (Opcional)</label>
+                                    <input
+                                        type="datetime-local"
+                                        className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                        value={newAssignment.custom_deadline || ''}
+                                        onChange={(e) => setNewAssignment({ ...newAssignment, custom_deadline: e.target.value })}
+                                    />
+                                    <p className="text-[10px] text-slate-400 mt-1">Sobrescreve o horário padrão do modelo</p>
+                                </div>
                             </div>
                         </div>
                         <div className="flex gap-3 mt-8">
