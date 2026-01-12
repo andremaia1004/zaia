@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User, CheckSquare, Bell } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User, CheckSquare, Bell, X } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/contexts/AuthContext'
 import { useNotifications } from '@/hooks/useNotifications'
@@ -32,7 +32,12 @@ const navItems = [
     { name: 'Configurações', href: '/settings', icon: Settings, roles: ['super_admin', 'admin'] },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+    isOpen?: boolean
+    onClose?: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname()
     const router = useRouter()
     const { profile, signOut, selectedStore, setSelectedStore } = useAuth()
@@ -53,14 +58,26 @@ export function Sidebar() {
     }, [profile])
 
     return (
-        <aside className="w-64 h-screen fixed left-0 top-0 glass-panel border-r border-white/10 rounded-none z-50 flex flex-col">
+        <aside className={clsx(
+            "w-64 h-screen fixed left-0 top-0 glass-panel border-r border-white/10 rounded-none z-50 flex flex-col transition-transform duration-300 ease-in-out md:translate-x-0",
+            isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        )}>
             <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
-                    <Link href="/dashboard">
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zaia-400 to-pink-400 font-display cursor-pointer bg-300% animate-gradient">
-                            ZAIA 2.0
-                        </h1>
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        <Link href="/dashboard" onClick={onClose}>
+                            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-zaia-400 to-pink-400 font-display cursor-pointer bg-300% animate-gradient">
+                                ZAIA 2.0
+                            </h1>
+                        </Link>
+                        {/* Mobile Close Button */}
+                        <button
+                            onClick={onClose}
+                            className="md:hidden p-1.5 text-slate-400 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
                     <div className="flex items-center gap-2">
                         <div className="relative">
                             <button
@@ -216,6 +233,7 @@ export function Sidebar() {
                                                 <Link
                                                     key={child.href}
                                                     href={child.href}
+                                                    onClick={onClose}
                                                     className={clsx(
                                                         "block px-4 py-2 text-sm rounded-lg transition-all duration-200",
                                                         isChildActive
@@ -232,6 +250,7 @@ export function Sidebar() {
                             ) : (
                                 <Link
                                     href={item.href}
+                                    onClick={onClose}
                                     className={clsx(
                                         "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group",
                                         isActive
