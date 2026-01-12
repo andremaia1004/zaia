@@ -58,7 +58,31 @@ export const tasksService = {
 
         if (error) throw error
 
-        // Flatten the joined data
+        return (data as any[]).map(occ => ({
+            ...occ,
+            requires_proof: occ.assignment?.template?.requires_proof || false,
+            default_due_time: occ.assignment?.template?.default_due_time
+        })) as TaskOccurrence[]
+    },
+
+    async getBacklogByStaff(staffId: string, beforeDate: string) {
+        const supabase = createClient()
+        const { data, error } = await supabase
+            .from('task_occurrences')
+            .select(`
+                *,
+                assignment:assignment_id(
+                    template:template_id(requires_proof, default_due_time)
+                )
+            `)
+            .eq('staff_id', staffId)
+            .lt('date', beforeDate)
+            .in('status', ['PENDENTE', 'ATRASA'])
+            .order('date', { ascending: false })
+            .limit(50)
+
+        if (error) throw error
+
         return (data as any[]).map(occ => ({
             ...occ,
             requires_proof: occ.assignment?.template?.requires_proof || false,
