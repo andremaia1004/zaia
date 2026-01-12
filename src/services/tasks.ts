@@ -37,6 +37,7 @@ export interface TaskTemplate {
     created_at?: string
     active: boolean
     xp_reward: number
+    deadline_days?: number
 }
 
 export const tasksService = {

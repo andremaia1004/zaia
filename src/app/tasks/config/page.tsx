@@ -20,7 +20,7 @@ export default function ConfigTasksPage() {
     const [newAssignment, setNewAssignment] = useState({ template_id: '', staff_id: '', store_id: '', scheduled_date: '', custom_deadline: '' })
     const [showAssignModal, setShowAssignModal] = useState(false)
     const [showTemplateModal, setShowTemplateModal] = useState(false)
-    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10 })
+    const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10, deadline_days: 0 })
     const [assigning, setAssigning] = useState(false)
 
     useEffect(() => {
@@ -187,7 +187,7 @@ export default function ConfigTasksPage() {
 
             await tasksService.createTemplate(templateToSave)
             setShowTemplateModal(false)
-            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10 })
+            setNewTemplate({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10, deadline_days: 0 })
             toast.success('Modelo de tarefa criado!')
             fetchData()
         } catch (error: any) {
@@ -452,6 +452,18 @@ export default function ConfigTasksPage() {
                                     value={newTemplate.target_value}
                                     onChange={(e) => setNewTemplate({ ...newTemplate, target_value: parseInt(e.target.value) || 1 })}
                                 />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo de Entrega (Dias após início)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                    value={newTemplate.deadline_days}
+                                    placeholder="0 = Mesmo dia"
+                                    onChange={(e) => setNewTemplate({ ...newTemplate, deadline_days: parseInt(e.target.value) || 0 })}
+                                />
+                                <p className="text-[10px] text-slate-400 mt-1">Ex: 0 = hoje, 4 = 4 dias depois</p>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Recompensa (XP)</label>

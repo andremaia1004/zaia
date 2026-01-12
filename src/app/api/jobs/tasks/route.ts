@@ -54,7 +54,7 @@ async function generateWeeklyOccurrences() {
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward)
+            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward, deadline_days)
         `)
         .eq('active', true)
         .in('task_templates.recurrence', ['daily', 'weekly', 'once'])
@@ -65,6 +65,13 @@ async function generateWeeklyOccurrences() {
 
     for (const assign of assignments) {
         const template = assign.task_templates
+
+        // Helper to add days to a date string (yyyy-MM-dd)
+        const addDaysToDate = (dateStr: string, days: number) => {
+            const date = new Date(dateStr + 'T00:00:00')
+            date.setDate(date.getDate() + (days || 0))
+            return format(date, 'yyyy-MM-dd')
+        }
 
         // Helper to create timestamp in Brazil time, then saved as ISO
         const getDueAtIso = (dateStr: string, timeStr: string | null) => {
@@ -91,15 +98,12 @@ async function generateWeeklyOccurrences() {
                 // Skip if day is before scheduled start date
                 if (scheduledDate && day < scheduledDate) continue
 
+                // Calculate Due Date based on deadline_days
+                const deadlineDateStr = addDaysToDate(dayStr, template.deadline_days)
+
                 // Calculate Due At
-                let dueAt = getDueAtIso(dayStr, template.default_due_time)
+                let dueAt = getDueAtIso(deadlineDateStr, template.default_due_time)
                 if (assign.custom_deadline) {
-                    // If custom deadline is set, use it directly (assuming it applies to the single occurrence or overrides)
-                    // For daily tasks, a specific custom_deadline might be weird if it's static for all days. 
-                    // Usually "Deadline" on an assignment implies the deadline for the task. 
-                    // If it's daily, maybe it doesn't make sense to have a fixed timestamp for all days? 
-                    // But adhering to request: "colocar data e prazo".
-                    // If user sets a specific deadline, we use it. 
                     dueAt = assign.custom_deadline
                 }
 
@@ -124,7 +128,10 @@ async function generateWeeklyOccurrences() {
             // Skip if week start is before scheduled date
             if (scheduledDate && weekStart < scheduledDate) continue
 
-            let dueAt = getDueAtIso(weekStartStr, template.default_due_time)
+            // Calculate Due Date based on deadline_days
+            const deadlineDateStr = addDaysToDate(weekStartStr, template.deadline_days)
+
+            let dueAt = getDueAtIso(deadlineDateStr, template.default_due_time)
             if (assign.custom_deadline) dueAt = assign.custom_deadline
 
             const isOverdue = dueAt && new Date(dueAt) < nowUtc
@@ -158,7 +165,10 @@ async function generateWeeklyOccurrences() {
                 targetDateStr = scheduledDateStr
             }
 
-            let dueAt = getDueAtIso(targetDateStr, template.default_due_time)
+            // Calculate Due Date based on deadline_days
+            const deadlineDateStr = addDaysToDate(targetDateStr, template.deadline_days)
+
+            let dueAt = getDueAtIso(deadlineDateStr, template.default_due_time)
             if (assign.custom_deadline) dueAt = assign.custom_deadline
 
             const isOverdue = dueAt && new Date(dueAt) < nowUtc
