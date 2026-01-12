@@ -26,10 +26,10 @@ export default function RankingPage() {
             setLoading(true)
             const supabase = createClient()
 
-            // Fetch ALL occurrences for the month to calculate live scores
+            // 1. Fetch ALL occurrences for the month
             let query = supabase
                 .from('task_occurrences')
-                .select('*, profiles:staff_id(name), stores(name)')
+                .select('*') // No joins here to avoid error
                 .gte('date', format(monthStart, 'yyyy-MM-dd'))
                 .lte('date', format(monthEnd, 'yyyy-MM-dd'))
 
@@ -41,11 +41,39 @@ export default function RankingPage() {
 
             const { data: occurrences, error } = await query
 
-            console.log('Ranking fetch result:', { count: occurrences?.length, error, store: selectedStore, profile })
-
             if (error) throw error
 
-            // Aggregate scores by staff
+            // 2. Extract unique IDs
+            const staffIds = Array.from(new Set(occurrences?.map(o => o.staff_id).filter(Boolean))) as string[]
+            const storeIds = Array.from(new Set(occurrences?.map(o => o.store_id).filter(Boolean))) as string[]
+
+            // 3. Fetch Profiles (names)
+            let profilesMap: Record<string, any> = {}
+            if (staffIds.length > 0) {
+                const { data: profilesData } = await supabase
+                    .from('profiles')
+                    .select('id, name')
+                    .in('id', staffIds)
+
+                profilesData?.forEach(p => {
+                    profilesMap[p.id] = p
+                })
+            }
+
+            // 4. Fetch Stores (names)
+            let storesMap: Record<string, any> = {}
+            if (storeIds.length > 0) {
+                const { data: storesData } = await supabase
+                    .from('stores')
+                    .select('id, name')
+                    .in('id', storeIds)
+
+                storesData?.forEach(s => {
+                    storesMap[s.id] = s
+                })
+            }
+
+            // 5. Aggregate scores
             const staffMap = new Map()
 
             occurrences?.forEach(occ => {
@@ -53,8 +81,8 @@ export default function RankingPage() {
                 if (!staffMap.has(staffId)) {
                     staffMap.set(staffId, {
                         id: staffId,
-                        profiles: occ.profiles,
-                        stores: occ.stores,
+                        profiles: profilesMap[staffId] || { name: 'Desconhecido' },
+                        stores: storesMap[occ.store_id] || { name: '-' },
                         total_xp: 0,
                         tasks_total: 0,
                         tasks_done: 0,

@@ -206,24 +206,73 @@ async function generateMonthlyOccurrences() {
         .from('task_assignments')
         .select(`
             *,
-            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward)
+            task_templates!inner(title, recurrence, target_value, default_due_time, xp_reward, deadline_days)
         `)
         .eq('active', true)
         .eq('task_templates.recurrence', 'monthly')
 
     if (error) throw error
 
-    const occurrences = assignments.map(assign => ({
-        assignment_id: assign.id,
-        title: assign.task_templates.title,
-        date: format(monthStart, 'yyyy-MM-dd'),
-        due_at: assign.task_templates.default_due_time ? `${format(monthStart, 'yyyy-MM-dd')}T${assign.task_templates.default_due_time}` : null,
-        target_value: assign.task_templates.target_value,
-        staff_id: assign.staff_id,
-        store_id: assign.store_id,
-        status: 'PENDENTE',
-        xp_reward: assign.task_templates.xp_reward || 10
-    }))
+    // Helper to add days to a date string (yyyy-MM-dd)
+    const addDaysToDate = (dateStr: string, days: number) => {
+        const date = new Date(dateStr + 'T00:00:00')
+        date.setDate(date.getDate() + (days || 0))
+        return format(date, 'yyyy-MM-dd')
+    }
+
+    // Helper to create timestamp in Brazil time
+    const getDueAtIso = (dateStr: string, timeStr: string | null) => {
+        if (!timeStr) return null
+        const dateTimeStr = `${dateStr}T${timeStr}`
+        return new Date(`${dateTimeStr}-03:00`).toISOString()
+    }
+
+    const occurrences = assignments.map(assign => {
+        // Determine the date for this month's occurrence
+        let targetDate = new Date(monthStart)
+
+        if (assign.scheduled_date) {
+            const sDate = new Date(assign.scheduled_date + 'T00:00:00')
+            // Skip if the scheduled start date is strictly after the end of the current month
+            if (sDate > endOfMonth(monthStart)) return null
+
+            // Validating if scheduled_date is a valid date string yyyy-MM-dd
+            // We want to use the DAY of the scheduled date for the current month
+            const [_, __, dayStr] = assign.scheduled_date.split('-')
+            const day = parseInt(dayStr)
+
+            if (!isNaN(day)) {
+                // Set the day of the current month to the scheduled day
+                // Clamp to the number of days in the current month
+                const daysInMonth = endOfMonth(monthStart).getDate()
+                targetDate.setDate(Math.min(day, daysInMonth))
+            }
+        }
+
+        const targetDateStr = format(targetDate, 'yyyy-MM-dd')
+
+        // Calculate Due Date based on deadline_days
+        const deadlineDateStr = addDaysToDate(targetDateStr, assign.task_templates.deadline_days)
+
+        let dueAt = getDueAtIso(deadlineDateStr, assign.task_templates.default_due_time)
+        if (assign.custom_deadline) dueAt = assign.custom_deadline
+
+        // Check if overdue
+        const nowUtc = new Date()
+        const isOverdue = dueAt && new Date(dueAt) < nowUtc
+
+        return {
+            assignment_id: assign.id,
+            title: assign.task_templates.title,
+            date: targetDateStr,
+            due_at: dueAt,
+            target_value: assign.task_templates.target_value,
+            staff_id: assign.staff_id,
+            store_id: assign.store_id,
+            status: isOverdue ? 'ATRASA' : 'PENDENTE',
+            xp_reward: assign.task_templates.xp_reward || 10
+        }
+    }).filter(Boolean) as any[]
 
     if (occurrences.length > 0) {
         const { error: insertError } = await supabaseAdmin

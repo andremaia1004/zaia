@@ -140,11 +140,18 @@ export default function ConfigTasksPage() {
             const jobType = template?.recurrence === 'monthly' ? 'monthly' : 'weekly'
 
             console.log(`Triggering ${jobType} task generation...`)
-            fetch(`/api/jobs/tasks?type=${jobType}`, { method: 'POST' })
-                .catch(err => console.error('Error triggering job:', err))
+            toast.loading('Gerando ocorrências...')
+
+            const jobResponse = await fetch(`/api/jobs/tasks?type=${jobType}`, { method: 'POST' })
+
+            if (!jobResponse.ok) {
+                console.error('Job trigger failed:', await jobResponse.text())
+                toast.warning('Atribuição criada, mas houve um erro ao gerar os cards. Eles aparecerão em breve automaticamente.')
+            } else {
+                toast.success('Tarefa atribuída e gerada com sucesso!')
+            }
 
             setShowAssignModal(false)
-            toast.success('Tarefa atribuída com sucesso!')
             fetchData()
             setNewAssignment({ template_id: '', staff_id: '', store_id: selectedStore?.id || '', scheduled_date: '', custom_deadline: '' })
         } catch (error: any) {
