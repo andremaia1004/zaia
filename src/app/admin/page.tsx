@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Building2, Users, TrendingUp, Plus, Loader2, DollarSign, Calendar, BarChart3, PieChart, ArrowUpRight, UserX, CalendarX } from 'lucide-react'
+import { Building2, Users, TrendingUp, Plus, Loader2, DollarSign, Calendar, BarChart3, PieChart, ArrowUpRight, UserX, CalendarX, Target, Zap, TrendingDown, CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
                     bg="bg-pink-500/10"
                 />
                 <MetricCard
-                    title="Taxa de Absenteísmo"
+                    title="Absenteísmo"
                     value={`${metrics ? ((metrics.appointmentsByStatus.missed / (metrics.appointmentsByStatus.attended + metrics.appointmentsByStatus.missed || 1)) * 100).toFixed(1) : 0}%`}
                     icon={UserX}
                     color="text-red-400"
@@ -183,17 +183,61 @@ export default function AdminDashboard() {
                     subtext={`${metrics?.appointmentsByStatus.missed || 0} faltas`}
                 />
                 <MetricCard
-                    title="Taxa de Cancelamento"
-                    value={`${metrics ? ((metrics.appointmentsByStatus.cancelled / (metrics.totalAppointments || 1)) * 100).toFixed(1) : 0}%`}
-                    icon={CalendarX}
-                    color="text-orange-400"
-                    bg="bg-orange-500/10"
-                    subtext={`${metrics?.appointmentsByStatus.cancelled || 0} cancelados`}
+                    title="Conformidade"
+                    value={`${metrics?.taskCompliance.toFixed(1) || 0}%`}
+                    icon={CheckCircle2}
+                    color="text-zaia-400"
+                    bg="bg-zaia-500/10"
+                    subtext="Tarefas executadas"
+                />
+                <MetricCard
+                    title="Captação Leads"
+                    value={`${metrics?.leadConversion.toFixed(1) || 0}%`}
+                    icon={Target}
+                    color="text-blue-400"
+                    bg="bg-blue-500/10"
+                    subtext="Conversão do Pipeline"
                 />
             </div>
 
-            {/* Charts Section */}
+            {/* Main Graphs */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Revenue Trend - Area Chart */}
+                <div className="glass-panel p-6 lg:col-span-3">
+                    <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-zaia-400" />
+                        Tendência de Faturamento Global
+                    </h3>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={metrics?.revenueTrend}>
+                                <defs>
+                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff05" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    stroke="#64748b"
+                                    fontSize={12}
+                                    tickFormatter={(str) => {
+                                        const d = new Date(str + 'T12:00:00')
+                                        return format(d, 'dd/MM')
+                                    }}
+                                />
+                                <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(val) => `R$${val / 1000}k`} />
+                                <Tooltip
+                                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#fff' }}
+                                    formatter={(val: any) => [Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
+                                />
+                                <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
 
                 {/* Revenue by Store - Bar Chart */}
                 <div className="glass-panel p-6 lg:col-span-2">
@@ -267,27 +311,34 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Absence by Store - Bar Chart */}
+                {/* Elite Leaders - Ranking Global */}
                 <div className="glass-panel p-6 lg:col-span-3">
-                    <h3 className="text-lg font-semibold text-white mb-6 flex items-center gap-2">
-                        <UserX className="w-5 h-5 text-red-400" />
-                        Taxa de Absenteísmo (%) por Loja
-                    </h3>
-                    <div className="h-[250px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={storePerformance} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
-                                <YAxis stroke="#94a3b8" fontSize={12} unit="%" />
-                                <Tooltip
-                                    cursor={{ fill: '#ffffff05' }}
-                                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
-                                    itemStyle={{ color: '#fff' }}
-                                    formatter={(val: any) => [Number(val).toFixed(1) + '%', 'Taxa de Faltas']}
-                                />
-                                <Bar dataKey="missedRate" name="Absenteísmo" radius={[4, 4, 0, 0]} fill="#ef4444" barSize={40} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="flex items-center justify-between mb-6">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-amber-400 shadow-sm" />
+                            Elite Leaders (Ranking Global XP)
+                        </h3>
+                        <Link href="/tasks/ranking" className="text-xs text-zaia-400 hover:text-white transition-colors">Ver todos</Link>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                        {metrics?.topPerformers.map((performer, idx) => (
+                            <div key={performer.id} className="relative group overflow-hidden p-4 rounded-xl bg-white/5 border border-white/5 hover:border-zaia-500/20 transition-all">
+                                <div className="absolute top-0 right-0 p-2 opacity-10">
+                                    <span className="text-3xl font-black italic">#{idx + 1}</span>
+                                </div>
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-zaia-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white mb-3 shadow-lg shadow-zaia-500/20">
+                                        {performer.name.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <p className="text-sm font-bold text-white truncate w-full">{performer.name}</p>
+                                    <p className="text-[10px] text-slate-500 uppercase mt-1">{performer.storeName}</p>
+                                    <div className="mt-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 text-[10px] font-bold border border-amber-500/10">
+                                        <Zap className="w-2.5 h-2.5" />
+                                        {performer.xp} XP
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

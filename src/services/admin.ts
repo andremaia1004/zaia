@@ -5,12 +5,16 @@ export interface AdminGlobalMetrics {
     totalAppointments: number
     totalClients: number
     activeStores: number
+    taskCompliance: number
+    leadConversion: number
     appointmentsByStatus: {
         scheduled: number
         attended: number
         missed: number
         cancelled: number
     }
+    revenueTrend: { date: string, revenue: number }[]
+    topPerformers: { id: string, name: string, storeName: string, xp: number }[]
 }
 
 export interface StorePerformance {
@@ -40,52 +44,100 @@ export const adminService = {
             .from('clients')
             .select('*', { count: 'exact', head: true })
 
-        // 3. Appointments & Revenue within Range
-        const { data: appointments, error } = await supabase
+        // 3. Appointments Data
+        const { data: appointments } = await supabase
             .from('appointments')
-            .select('status, result, value')
+            .select('date, status, result, value, store_id')
             .gte('date', startDate)
             .lte('date', endDate)
 
-        if (error) {
-            console.error('Error fetching global metrics:', error)
-            return null
-        }
+        // 4. Tasks Data (for Compliance)
+        const { data: tasks } = await supabase
+            .from('task_occurrences')
+            .select('status, xp_reward, staff_id, store_id')
+            .gte('date', startDate)
+            .lte('date', endDate)
 
-        const stats = appointments.reduce((acc, curr) => {
-            // Status Counts
+        // 5. Leads Data (for Conversion)
+        const { data: leads } = await supabase
+            .from('leads')
+            .select('status')
+            .gte('created_at', startDate)
+            .lte('created_at', `${endDate}T23:59:59`)
+
+        // 6. Profiles & Stores (for Top Performers names)
+        const { data: profiles } = await supabase.from('profiles').select('id, name')
+        const { data: stores } = await supabase.from('stores').select('id, name')
+
+        // Process Metrics
+        const apps = appointments || []
+        const taskList = tasks || []
+        const leadList = leads || []
+
+        // Status Counts & Revenue Trend
+        const revenueMap = new Map<string, number>()
+        const stats = apps.reduce((acc, curr) => {
             if (curr.status === 'AGENDADO') acc.scheduled++
             if (curr.status === 'COMPARECEU') acc.attended++
             if (curr.status === 'FALTOU') acc.missed++
             if (curr.status === 'CANCELADO') acc.cancelled++
 
-            // Revenue from Sales
             if (curr.result === 'COMPROU') {
-                acc.revenue += Number(curr.value) || 0
+                const val = Number(curr.value) || 0
+                acc.revenue += val
+                revenueMap.set(curr.date, (revenueMap.get(curr.date) || 0) + val)
             }
-
             acc.total++
             return acc
-        }, {
-            scheduled: 0,
-            attended: 0,
-            missed: 0,
-            cancelled: 0,
-            revenue: 0,
-            total: 0
+        }, { scheduled: 0, attended: 0, missed: 0, cancelled: 0, revenue: 0, total: 0 })
+
+        // Revenue Trend Formatting
+        const revenueTrend = Array.from(revenueMap.entries())
+            .map(([date, revenue]) => ({ date, revenue }))
+            .sort((a, b) => a.date.localeCompare(b.date))
+
+        // Task Compliance
+        const doneTasks = taskList.filter(t => t.status === 'FEITA').length
+        const taskCompliance = taskList.length > 0 ? (doneTasks / taskList.length) * 100 : 0
+
+        // Lead Conversion
+        const convertedLeads = leadList.filter(l => ['AGENDADO', 'QUALIFICADO', 'COMPARECEU', 'COMPROU'].includes(l.status.toUpperCase())).length
+        const leadConversion = leadList.length > 0 ? (convertedLeads / leadList.length) * 100 : 0
+
+        // Top Performers (XP)
+        const xpMap = new Map<string, { xp: number, storeId: string }>()
+        taskList.forEach(t => {
+            if (t.status === 'FEITA' && t.staff_id) {
+                const current = xpMap.get(t.staff_id) || { xp: 0, storeId: t.store_id }
+                xpMap.set(t.staff_id, { xp: current.xp + (Number(t.xp_reward) || 10), storeId: t.store_id })
+            }
         })
+
+        const topPerformers = Array.from(xpMap.entries())
+            .map(([id, data]) => ({
+                id,
+                name: profiles?.find(p => p.id === id)?.name || 'Desconhecido',
+                storeName: stores?.find(s => s.id === data.storeId)?.name || 'Loja',
+                xp: data.xp
+            }))
+            .sort((a, b) => b.xp - a.xp)
+            .slice(0, 5)
 
         return {
             totalRevenue: stats.revenue,
             totalAppointments: stats.total,
             totalClients: totalClients || 0,
             activeStores: activeStores || 0,
+            taskCompliance,
+            leadConversion,
             appointmentsByStatus: {
                 scheduled: stats.scheduled,
                 attended: stats.attended,
                 missed: stats.missed,
                 cancelled: stats.cancelled
-            }
+            },
+            revenueTrend,
+            topPerformers
         } as AdminGlobalMetrics
     },
 
