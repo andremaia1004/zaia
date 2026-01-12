@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { tasksService } from '@/services/tasks'
 import { createClient } from '@/lib/supabase/client'
+import { notificationService } from '@/services/notifications'
 import { Plus, Trash2, Edit2, Users, Building, Calendar, CheckSquare, Loader2, Clock, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { toast } from 'sonner'
@@ -149,6 +150,25 @@ export default function ConfigTasksPage() {
                 toast.warning('Atribuição criada, mas houve um erro ao gerar os cards. Eles aparecerão em breve automaticamente.')
             } else {
                 toast.success('Tarefa atribuída e gerada com sucesso!')
+
+                // 3. Create Notification for the Staff member
+                try {
+                    const template = templates.find(t => t.id === newAssignment.template_id)
+                    const staffMember = staff.find(s => s.id === newAssignment.staff_id)
+
+                    if (staffMember?.id) {
+                        await notificationService.create({
+                            user_id: staffMember.id, // Profile ID is the Auth User ID in this case? I should verify.
+                            store_id: newAssignment.store_id as any,
+                            title: 'Nova Tarefa Atribuída',
+                            message: `Você recebeu uma nova tarefa: ${template?.title}.`,
+                            type: 'info',
+                            link: '/tasks/my-week'
+                        })
+                    }
+                } catch (err) {
+                    console.error("Failed to create task notification", err)
+                }
             }
 
             setShowAssignModal(false)
@@ -181,15 +201,16 @@ export default function ConfigTasksPage() {
             return
         }
         try {
-            if (profile?.role !== 'super_admin') {
-                toast.error('Apenas SuperAdmins podem criar modelos de tarefas')
+            if (profile?.role !== 'super_admin' && profile?.role !== 'store_admin') {
+                toast.error('Você não tem permissão para criar modelos de tarefas')
                 return
             }
 
             // Sanitize default_due_time: empty string should be null for the database
             const templateToSave = {
                 ...newTemplate,
-                default_due_time: newTemplate.default_due_time.trim() || null
+                default_due_time: newTemplate.default_due_time.trim() || null,
+                store_id: profile?.role === 'super_admin' ? (selectedStore?.id || null) : profile?.store_id
             }
 
             await tasksService.createTemplate(templateToSave)
@@ -247,19 +268,23 @@ export default function ConfigTasksPage() {
                             <CheckSquare className="w-5 h-5 text-zaia-600 dark:text-zaia-400" />
                             <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Modelos</h2>
                         </div>
-                        <Button size="icon" variant="outline" onClick={() => setShowTemplateModal(true)}>
-                            <Plus className="w-4 h-4" />
-                        </Button>
+                        {(profile?.role === 'super_admin' || profile?.role === 'store_admin') && (
+                            <Button size="icon" variant="outline" onClick={() => setShowTemplateModal(true)}>
+                                <Plus className="w-4 h-4" />
+                            </Button>
+                        )}
                     </div>
                     <div className="space-y-3">
                         {templates.map(template => (
                             <div key={template.id} className="glass-panel p-4 border border-slate-200 dark:border-white/5 relative group">
-                                <button
-                                    onClick={() => handleDeleteTemplate(template.id)}
-                                    className="absolute top-2 right-2 p-1.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-400 transition-all"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                {(profile?.role === 'super_admin' || (profile?.role === 'store_admin' && template.store_id === profile.store_id)) && (
+                                    <button
+                                        onClick={() => handleDeleteTemplate(template.id)}
+                                        className="absolute top-2 right-2 p-1.5 opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-400 transition-all"
+                                    >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
                                 <h3 className="font-medium text-slate-900 dark:text-white pr-6">{template.title}</h3>
                                 <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-500">
                                     <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {template.recurrence}</span>

@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User, CheckSquare } from 'lucide-react'
+import { LayoutDashboard, Calendar, Users, Briefcase, Layers, TrendingUp, Shield, LogOut, ChevronDown, Store, Settings, User, CheckSquare, Bell } from 'lucide-react'
 import { clsx } from 'clsx'
 import { useAuth } from '@/contexts/AuthContext'
+import { useNotifications } from '@/hooks/useNotifications'
 import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
 import { ThemeToggle } from '../ui/ThemeToggle'
@@ -35,8 +36,10 @@ export function Sidebar() {
     const pathname = usePathname()
     const router = useRouter()
     const { profile, signOut, selectedStore, setSelectedStore } = useAuth()
+    const { unreadCount, notifications, markAsRead } = useNotifications()
     const [stores, setStores] = useState<{ id: string, name: string }[]>([])
     const [showStoreMenu, setShowStoreMenu] = useState(false)
+    const [showNotifications, setShowNotifications] = useState(false)
 
     useEffect(() => {
         if (profile?.role === 'super_admin') {
@@ -58,7 +61,49 @@ export function Sidebar() {
                             ZAIA 2.0
                         </h1>
                     </Link>
-                    <ThemeToggle />
+                    <div className="flex items-center gap-2">
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowNotifications(!showNotifications)}
+                                className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors relative"
+                            >
+                                <Bell className="w-5 h-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-zaia-500 rounded-full border-2 border-[#0f172a]" />
+                                )}
+                            </button>
+
+                            {showNotifications && (
+                                <div className="absolute top-full left-0 mt-2 w-80 glass-panel border border-white/10 shadow-2xl z-[60] overflow-hidden bg-slate-900">
+                                    <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                        <h3 className="font-bold text-white text-sm">Notificações</h3>
+                                        {unreadCount > 0 && <span className="text-[10px] bg-zaia-500 text-white px-2 py-0.5 rounded-full">{unreadCount} novas</span>}
+                                    </div>
+                                    <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                                        {notifications.length === 0 ? (
+                                            <div className="p-8 text-center text-slate-500 text-xs">Nenhuma notificação nova</div>
+                                        ) : (
+                                            notifications.map(n => (
+                                                <div
+                                                    key={n.id}
+                                                    onClick={() => {
+                                                        markAsRead(n.id)
+                                                        if (n.link) router.push(n.link)
+                                                        setShowNotifications(false)
+                                                    }}
+                                                    className="p-4 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                                                >
+                                                    <p className="text-sm font-medium text-white mb-1">{n.title}</p>
+                                                    <p className="text-xs text-slate-400 line-clamp-2">{n.message}</p>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <ThemeToggle />
+                    </div>
                 </div>
 
                 {/* Super Admin Store Selector */}
@@ -138,6 +183,14 @@ export function Sidebar() {
                     const Icon = item.icon
                     const hasChildren = item.children && item.children.length > 0
 
+                    // Notification Logic per Item
+                    const itemNotifications = notifications.filter(n => {
+                        if (item.name === 'Agenda') return n.type === 'info' && n.title.includes('Consulta')
+                        if (item.name === 'Tarefas') return n.type === 'info' && n.title.includes('Tarefa')
+                        return false
+                    })
+                    const hasItemNotification = itemNotifications.length > 0
+
                     return (
                         <div key={item.name + item.href} className="space-y-1">
                             {hasChildren ? (
@@ -146,8 +199,11 @@ export function Sidebar() {
                                         "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group cursor-default",
                                         isActive ? "text-zaia-300" : "text-slate-400 group-hover:text-white"
                                     )}>
-                                        <div className="flex items-center gap-3">
-                                            <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                        <div className="flex items-center gap-3 relative">
+                                            <div className="relative">
+                                                <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                                {hasItemNotification && <span className="absolute -top-1 -right-1 w-2 h-2 bg-zaia-500 rounded-full border-2 border-[#0f172a]" />}
+                                            </div>
                                             <span className="font-medium">{item.name}</span>
                                         </div>
                                     </div>
@@ -183,7 +239,10 @@ export function Sidebar() {
                                             : "text-slate-400 hover:bg-white/5 hover:text-white"
                                     )}
                                 >
-                                    <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                    <div className="relative">
+                                        <Icon className={clsx("w-5 h-5", isActive ? "text-zaia-400" : "group-hover:text-white")} />
+                                        {hasItemNotification && <span className="absolute -top-1 -right-1 w-2 h-2 bg-zaia-500 rounded-full border-2 border-[#0f172a]" />}
+                                    </div>
                                     <span className="font-medium">{item.name}</span>
                                 </Link>
                             )}

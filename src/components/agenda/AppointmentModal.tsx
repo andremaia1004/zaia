@@ -4,6 +4,7 @@ import { professionalService } from '@/services/professionals'
 import { clientService } from '@/services/clients'
 import { appointmentService } from '@/services/appointments'
 import { leadService } from '@/services/leads'
+import { notificationService } from '@/services/notifications'
 import type { Professional } from '@/services/types'
 import { Modal } from '@/components/ui/Modal'
 import { format } from 'date-fns'
@@ -109,6 +110,23 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 result: 'NAO_DEFINIDO',
                 store_id: targetStoreId
             })
+
+            // 2b. Create Notification for the Professional
+            try {
+                const targetProfessional = professionals.find(p => p.id === data.professional_id)
+                if (targetProfessional?.user_id) {
+                    await notificationService.create({
+                        user_id: targetProfessional.user_id,
+                        store_id: targetStoreId!,
+                        title: 'Nova Consulta Agendada',
+                        message: `Nova consulta para ${client.name} em ${format(new Date(data.date + 'T12:00:00'), 'dd/MM/yyyy')}.`,
+                        type: 'info',
+                        link: '/agenda'
+                    })
+                }
+            } catch (err) {
+                console.error("Failed to create notification", err)
+            }
 
             // 3. Auto-create/Update Lead in Pipeline
             try {

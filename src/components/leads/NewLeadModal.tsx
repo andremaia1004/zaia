@@ -77,7 +77,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             const { data: lead, error: leadError } = await leadService.create({
                 client_id: clientId,
                 store_id: targetStoreId,
-                status: formData.scheduleAppointment ? 'AGENDADO' : 'Novo',
+                status: formData.scheduleAppointment ? 'AGENDADO' : 'NOVO',
                 channel: formData.channel,
                 interest: formData.interest,
                 notes: formData.notes

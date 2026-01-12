@@ -1,8 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { appointmentService } from '@/services/appointments'
+import { tasksService } from '@/services/tasks'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/contexts/AuthContext'
-import { TrendingUp, Users, CalendarCheck, CalendarX, DollarSign, Wallet } from 'lucide-react'
+import { TrendingUp, Users, CalendarCheck, CalendarX, DollarSign, Wallet, CheckCircle2, Trophy, ArrowRight } from 'lucide-react'
+import { clsx } from 'clsx'
 import { startOfMonth, endOfMonth, format, eachDayOfInterval, isSameDay, startOfWeek, endOfWeek } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts'
@@ -17,8 +21,12 @@ export default function DashboardPage() {
         conversion: 0,
         revenue: 0,
         averageTicket: 0,
-        attendanceRate: 0
+        attendanceRate: 0,
+        taskCompletion: 0,
+        totalTasks: 0,
+        completedTasks: 0,
     })
+    const [topRanking, setTopRanking] = useState<any[]>([])
     const [nextAppointments, setNextAppointments] = useState<any[]>([])
     const [dailyData, setDailyData] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
@@ -35,6 +43,7 @@ export default function DashboardPage() {
     const fetchMetrics = async () => {
         setLoading(true)
         const { start, end } = dateRange
+        const supabase = createClient()
 
         try {
             const targetStoreId = selectedStore?.id || profile?.store_id
@@ -55,7 +64,10 @@ export default function DashboardPage() {
 
             const conversion = attended > 0 ? (sales / attended) * 100 : 0
 
-            setMetrics({ scheduled, attended, missed, sales, conversion, revenue, averageTicket, attendanceRate })
+            setMetrics({
+                scheduled, attended, missed, sales, conversion, revenue, averageTicket, attendanceRate,
+                taskCompletion: 0, totalTasks: 0, completedTasks: 0
+            })
 
             // 2. Prepare Chart Data (Daily Activity for Selected Range)
             const daysInInterval = eachDayOfInterval({
@@ -94,6 +106,55 @@ export default function DashboardPage() {
                 .slice(0, 5)
 
             setNextAppointments(upcoming)
+
+            // 4. Fetch Task Metrics
+            const { data: taskData } = await supabase
+                .from('task_occurrences')
+                .select('status')
+                .eq('store_id', targetStoreId)
+                .gte('date', start)
+                .lte('date', end)
+
+            const totalTasks = taskData?.length || 0
+            const completedTasks = taskData?.filter((t: any) => t.status === 'FEITA').length || 0
+            const taskCompletion = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+
+            setMetrics(prev => ({ ...prev, totalTasks, completedTasks, taskCompletion }))
+
+            // 5. Fetch Top Ranking
+            const { data: occData } = await supabase
+                .from('task_occurrences')
+                .select('staff_id, xp_reward')
+                .eq('status', 'FEITA')
+                .eq('store_id', targetStoreId)
+                .gte('date', start)
+                .lte('date', end)
+
+            if (occData) {
+                const scores = occData.reduce((acc: any, curr: any) => {
+                    acc[curr.staff_id] = (acc[curr.staff_id] || 0) + (curr.xp_reward || 0)
+                    return acc
+                }, {})
+
+                const sortedScores = Object.entries(scores)
+                    .sort(([, a]: any, [, b]: any) => b - a)
+                    .slice(0, 3)
+
+                const staffIds = sortedScores.map(([id]) => id)
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, name')
+                    .in('id', staffIds)
+
+                const rankingWithNames = sortedScores.map(([id, score]: any) => ({
+                    id,
+                    score,
+                    name: profiles?.find((p: any) => p.id === id)?.name || 'Usuário'
+                }))
+
+                setTopRanking(rankingWithNames)
+            }
+
         } catch (error) {
             console.error("Failed to fetch dashboard data", error)
         } finally {
@@ -161,6 +222,14 @@ export default function DashboardPage() {
                     color="text-blue-400"
                     bg="bg-blue-500/10"
                 />
+                <MetricCard
+                    title="Tarefas Concluídas"
+                    value={`${metrics.completedTasks}/${metrics.totalTasks}`}
+                    icon={CheckCircle2}
+                    color="text-amber-400"
+                    bg="bg-amber-500/10"
+                    trend={`${metrics.taskCompletion.toFixed(0)}% de sucesso`}
+                />
             </div>
 
             {/* Charts Section */}
@@ -213,6 +282,38 @@ export default function DashboardPage() {
                             <FunnelItem label="Compareceram" value={metrics.attended} total={metrics.scheduled} color="bg-violet-500" />
                             <FunnelItem label="Vendas" value={metrics.sales} total={metrics.scheduled} color="bg-emerald-500" />
                         </div>
+                    </div>
+
+                    <div className="glass-panel p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-white">Top Performance</h3>
+                            <Trophy className="w-5 h-5 text-amber-400" />
+                        </div>
+                        {topRanking.length === 0 ? (
+                            <p className="text-slate-500 text-sm">Nenhum dado de ranking para este período.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {topRanking.map((rank, index) => (
+                                    <div key={rank.id} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className={clsx(
+                                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                                                index === 0 ? "bg-amber-500 text-amber-950" :
+                                                    index === 1 ? "bg-slate-300 text-slate-900" :
+                                                        "bg-amber-700 text-amber-100"
+                                            )}>
+                                                {index + 1}
+                                            </div>
+                                            <span className="text-sm font-medium text-slate-200">{rank.name}</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-zaia-400">{rank.score} XP</span>
+                                    </div>
+                                ))}
+                                <Link href="/tasks/ranking" className="flex items-center justify-center gap-2 text-xs text-zaia-400 hover:text-zaia-300 transition-colors pt-2 border-t border-white/5">
+                                    Ver ranking completo <ArrowRight className="w-3 h-3" />
+                                </Link>
+                            </div>
+                        )}
                     </div>
 
                     <div className="glass-panel p-6">
