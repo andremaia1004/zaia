@@ -83,7 +83,7 @@ export function MonthlyList({ currentDate }: { currentDate: Date }) {
     // Sort dates
     const sortedDates = Object.keys(groupedAppointments).sort()
 
-    if (loading) {
+    if (loading && appointments.length === 0) {
         return (
             <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-12 h-12 text-zaia-500 animate-spin opacity-50" />
