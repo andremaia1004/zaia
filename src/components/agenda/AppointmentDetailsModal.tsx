@@ -6,7 +6,7 @@ import { professionalService } from '@/services/professionals'
 import type { Appointment, Professional } from '@/services/types'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Pencil, Save, X } from 'lucide-react'
+import { Loader2, Pencil, Save, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface AppointmentDetailsModalProps {
@@ -38,7 +38,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                 professional_id: appointment.professional_id,
                 notes: appointment.notes || ''
             })
-            professionalService.getAllActive().then(setProfessionals)
+            professionalService.getAllActive(appointment.store_id).then(setProfessionals)
         }
     }, [isOpen, appointment])
 
@@ -132,7 +132,7 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
     }
 
     const handleRejectionReasonSave = async (reason: string) => {
-        // Save explanation to notes
+        setLoading(true)
         try {
             await appointmentService.update(appointment.id, { notes: reason })
             onUpdate()
@@ -141,6 +141,8 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
         } catch (error) {
             console.error(error)
             toast.error('Erro ao salvar observação')
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -311,16 +313,22 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
                                                     appointmentService.update(appointment.id, { value: val })
                                                         .then(() => {
                                                             onUpdate()
-                                                            setLoading(false)
                                                             toast.success('Valor salvo!')
                                                             onClose()
+                                                        })
+                                                        .catch((err) => {
+                                                            console.error(err)
+                                                            toast.error('Erro ao salvar valor')
+                                                        })
+                                                        .finally(() => {
+                                                            setLoading(false)
                                                         })
                                                 }
                                             }}
                                             disabled={loading}
-                                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors"
+                                            className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                                         >
-                                            Salvar
+                                            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Salvar'}
                                         </button>
                                     </div>
                                 </div>

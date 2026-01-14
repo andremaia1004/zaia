@@ -111,35 +111,37 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 store_id: targetStoreId
             })
 
-            // 2b. Create Notification for the Professional
-            try {
-                const targetProfessional = professionals.find(p => p.id === data.professional_id)
-                if (targetProfessional?.user_id) {
-                    await notificationService.create({
-                        user_id: targetProfessional.user_id,
-                        store_id: targetStoreId!,
-                        title: 'Nova Consulta Agendada',
-                        message: `Nova consulta para ${client.name} em ${format(new Date(data.date + 'T12:00:00'), 'dd/MM/yyyy')}.`,
-                        type: 'info',
-                        link: '/agenda'
-                    })
-                }
-            } catch (err) {
-                console.error("Failed to create notification", err)
-            }
-
-            // 3. Auto-create/Update Lead in Pipeline
-            try {
-                await leadService.create({
+            // 3. Side effects in parallel (don't block the UI)
+            Promise.allSettled([
+                // Create Notification for the Professional
+                (async () => {
+                    const targetProfessional = professionals.find(p => p.id === data.professional_id)
+                    if (targetProfessional?.user_id) {
+                        await notificationService.create({
+                            user_id: targetProfessional.user_id,
+                            store_id: targetStoreId!,
+                            title: 'Nova Consulta Agendada',
+                            message: `Nova consulta para ${client.name} em ${format(new Date(data.date + 'T12:00:00'), 'dd/MM/yyyy')}.`,
+                            type: 'info',
+                            link: '/agenda'
+                        })
+                    }
+                })(),
+                // Auto-create/Update Lead in Pipeline
+                leadService.create({
                     client_id: client.id,
                     status: 'AGENDADO',
                     channel: data.origin,
                     interest: 'Consulta Geral',
                     store_id: targetStoreId
                 })
-            } catch (err) {
-                console.error("Failed to sync with pipeline", err)
-            }
+            ]).then(results => {
+                results.forEach((res, i) => {
+                    if (res.status === 'rejected') {
+                        console.error(`Side effect ${i} failed:`, res.reason)
+                    }
+                })
+            })
 
             onSuccess()
             toast.success('Consulta agendada com sucesso!')
