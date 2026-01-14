@@ -1,0 +1,44 @@
+[
+  {
+    "id": "a05e1426-4d45-4b9f-84fa-2f507849e05f",
+    "name": "Presidente Dutra",
+    "slug": "presidente-dutra",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:18.007406+00:00"
+  },
+  {
+    "id": "c16e1363-8943-495d-ad3c-9fd0f875f26b",
+    "name": "São Domingos",
+    "slug": "s-o-domingos",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:19.763874+00:00"
+  },
+  {
+    "id": "d02e89ae-bb8b-410e-b614-a81b5b210623",
+    "name": "Fortuna",
+    "slug": "fortuna",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:21.258881+00:00"
+  },
+  {
+    "id": "873e8a97-f252-46d6-922a-834da040a947",
+    "name": "Santa Filomena",
+    "slug": "santa-filomena",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:22.748974+00:00"
+  },
+  {
+    "id": "237aadbc-f516-494b-8e85-9a7c49c27f2f",
+    "name": "Colinas",
+    "slug": "colinas",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:24.286483+00:00"
+  },
+  {
+    "id": "55637995-4fb0-4ac2-a2ec-d4afadf563d9",
+    "name": "Graça Aranha",
+    "slug": "gra-a-aranha",
+    "owner_id": null,
+    "created_at": "2026-01-07T12:23:25.785168+00:00"
+  }
+]

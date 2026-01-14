@@ -125,6 +125,16 @@ export default function ConfigTasksPage() {
         try {
             setAssigning(true)
             const supabase = createClient()
+
+            // Validate and refresh session before acting
+            const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession()
+
+            if (sessionError || !currentSession) {
+                console.error('Session validation failed:', sessionError)
+                toast.error('Sessão expirada. Por favor, recarregue a página ou faça login novamente.')
+                return
+            }
+
             console.log('Sending assignment data:', newAssignment)
             const { data, error } = await supabase
                 .from('task_assignments')
@@ -133,7 +143,12 @@ export default function ConfigTasksPage() {
 
             if (error) {
                 console.error('Database error creating assignment:', error)
-                throw error
+                if (error.code === '42501' || error.message?.includes('RLS')) {
+                    toast.error('Erro de permissão. Sua sessão pode ter expirado, tente atualizar a página.')
+                } else {
+                    throw error
+                }
+                return
             }
 
             console.log('Assignment created successfully:', data)

@@ -1,0 +1,98 @@
+{
+  "pros": [
+    {
+      "id": "48ec4410-c4dd-4f7d-b48b-9bd7708fa4e3",
+      "user_id": null,
+      "name": "Dr. Zayron ",
+      "role": "Optometrista",
+      "active": true,
+      "store_id": null,
+      "phone": "",
+      "created_at": "2026-01-12T19:45:55.33398+00:00",
+      "updated_at": "2026-01-12T19:45:55.33398+00:00",
+      "email": ""
+    },
+    {
+      "id": "65906441-d164-4f77-825b-851e66866735",
+      "user_id": null,
+      "name": "Dr. Orleans ",
+      "role": "Optometrista",
+      "active": true,
+      "store_id": null,
+      "phone": "",
+      "created_at": "2026-01-12T19:46:07.687989+00:00",
+      "updated_at": "2026-01-12T19:46:07.687989+00:00",
+      "email": ""
+    },
+    {
+      "id": "fe2a89ae-573e-49fe-929c-8fdd9f83a9b7",
+      "user_id": null,
+      "name": "Dr Lucas",
+      "role": "Optometrista",
+      "active": true,
+      "store_id": "a05e1426-4d45-4b9f-84fa-2f507849e05f",
+      "phone": "",
+      "created_at": "2026-01-13T17:40:39.456051+00:00",
+      "updated_at": "2026-01-13T17:40:39.456051+00:00",
+      "email": ""
+    }
+  ],
+  "profiles": [
+    {
+      "id": "d9ed1981-e42e-415c-be2f-3037fb6c8b3d",
+      "role": "super_admin",
+      "store_id": null,
+      "name": "Super Admin",
+      "created_at": "2026-01-06T18:59:02.338899+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "66f85316-8639-4a9e-9d1c-f708772bcd29",
+      "role": "staff",
+      "store_id": "a05e1426-4d45-4b9f-84fa-2f507849e05f",
+      "name": "Presidente Dutra",
+      "created_at": "2026-01-07T12:23:19.052055+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "c3944fcb-75b3-43aa-a6cd-6c4e5190bc4e",
+      "role": "staff",
+      "store_id": "c16e1363-8943-495d-ad3c-9fd0f875f26b",
+      "name": "São Domingos",
+      "created_at": "2026-01-07T12:23:20.696035+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "99ee2998-6288-4c6f-8255-a97c4ae7274b",
+      "role": "staff",
+      "store_id": "d02e89ae-bb8b-410e-b614-a81b5b210623",
+      "name": "Fortuna",
+      "created_at": "2026-01-07T12:23:22.146861+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "3e72b287-180e-4d7c-beba-021b9c5d9648",
+      "role": "staff",
+      "store_id": "873e8a97-f252-46d6-922a-834da040a947",
+      "name": "Santa Filomena",
+      "created_at": "2026-01-07T12:23:23.677677+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "bbc72507-7468-4cd7-8c09-b228e427f28f",
+      "role": "staff",
+      "store_id": "237aadbc-f516-494b-8e85-9a7c49c27f2f",
+      "name": "Colinas",
+      "created_at": "2026-01-07T12:23:25.211109+00:00",
+      "avatar_url": null
+    },
+    {
+      "id": "7670ea63-6e7e-4b16-aa47-8ee73ce26807",
+      "role": "staff",
+      "store_id": "55637995-4fb0-4ac2-a2ec-d4afadf563d9",
+      "name": "Graça Aranha",
+      "created_at": "2026-01-07T12:23:27.118475+00:00",
+      "avatar_url": null
+    }
+  ]
+}
