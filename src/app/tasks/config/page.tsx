@@ -56,9 +56,13 @@ export default function ConfigTasksPage() {
                 .select('id, name, role, store_id')
                 .in('role', ['staff', 'store_admin'])
 
-            if (selectedStore?.id) {
+            // For super_admin, we fetch all staff to allow cross-store assignment in the modal
+            // Others see only their store or the selected store
+            if (profile?.role === 'super_admin') {
+                // No extra filter, fetch all staff/admins
+            } else if (selectedStore?.id) {
                 pQuery = pQuery.eq('store_id', selectedStore.id)
-            } else if (profile?.role !== 'super_admin' && profile?.store_id) {
+            } else if (profile?.store_id) {
                 pQuery = pQuery.eq('store_id', profile.store_id)
             }
 
@@ -376,7 +380,7 @@ export default function ConfigTasksPage() {
                                 <select
                                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-4 py-2 text-slate-900 dark:text-white outline-none focus:border-zaia-500 appearance-none"
                                     value={newAssignment.store_id}
-                                    onChange={(e) => setNewAssignment({ ...newAssignment, store_id: e.target.value })}
+                                    onChange={(e) => setNewAssignment({ ...newAssignment, store_id: e.target.value, staff_id: '' })}
                                 >
                                     <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione a loja</option>
                                     {stores.map(s => <option key={s.id} value={s.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{s.name}</option>)}
@@ -390,7 +394,9 @@ export default function ConfigTasksPage() {
                                     onChange={(e) => setNewAssignment({ ...newAssignment, staff_id: e.target.value })}
                                 >
                                     <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione o staff</option>
-                                    {staff.map(u => <option key={u.id} value={u.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{u.name}</option>)}
+                                    {staff
+                                        .filter(u => !newAssignment.store_id || u.store_id === newAssignment.store_id)
+                                        .map(u => <option key={u.id} value={u.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{u.name}</option>)}
                                 </select>
                             </div>
 
