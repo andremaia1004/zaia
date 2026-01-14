@@ -23,6 +23,14 @@ export default function ConfigTasksPage() {
     const [showTemplateModal, setShowTemplateModal] = useState(false)
     const [newTemplate, setNewTemplate] = useState({ title: '', description: '', recurrence: 'weekly', target_value: 1, requires_proof: false, default_due_time: '', xp_reward: 10, deadline_days: 0 })
     const [assigning, setAssigning] = useState(false)
+    const [customTemplate, setCustomTemplate] = useState({
+        title: '',
+        recurrence: 'weekly',
+        target_value: 1,
+        xp_reward: 10,
+        deadline_days: 0,
+        requires_proof: false
+    })
 
     useEffect(() => {
         fetchData()
@@ -116,9 +124,22 @@ export default function ConfigTasksPage() {
 
     const handleAssign = async () => {
         console.log('handleAssign triggered. State:', newAssignment)
-        if (!newAssignment.template_id || !newAssignment.staff_id || !newAssignment.store_id) {
+
+        const isCustom = newAssignment.template_id === 'CUSTOM'
+
+        if (isCustom) {
+            if (!customTemplate.title || !customTemplate.target_value) {
+                toast.error('Preencha o título e a meta da tarefa personalizada')
+                return
+            }
+        } else if (!newAssignment.template_id) {
+            toast.error('Selecione um modelo de tarefa')
+            return
+        }
+
+        if (!newAssignment.staff_id || !newAssignment.store_id) {
             console.warn('Assignment validation failed:', newAssignment)
-            toast.error('Preencha todos os campos da atribuição')
+            toast.error('Preencha a loja e o colaborador')
             return
         }
 
@@ -135,10 +156,26 @@ export default function ConfigTasksPage() {
                 return
             }
 
-            console.log('Sending assignment data:', newAssignment)
+            let finalTemplateId = newAssignment.template_id
+
+            // Case: Custom Template creation on the fly
+            if (isCustom) {
+                const templateToSave = {
+                    ...customTemplate,
+                    store_id: profile?.role === 'super_admin' ? (newAssignment.store_id || null) : profile?.store_id,
+                    active: true
+                }
+                const createdTemplate = await tasksService.createTemplate(templateToSave)
+                finalTemplateId = createdTemplate.id
+                // Refresh templates list
+                const updatedTemplates = await tasksService.getTemplates()
+                setTemplates(updatedTemplates || [])
+            }
+
+            console.log('Sending assignment data:', { ...newAssignment, template_id: finalTemplateId })
             const { data, error } = await supabase
                 .from('task_assignments')
-                .insert(newAssignment)
+                .insert({ ...newAssignment, template_id: finalTemplateId })
                 .select()
 
             if (error) {
@@ -193,6 +230,14 @@ export default function ConfigTasksPage() {
             setShowAssignModal(false)
             fetchData()
             setNewAssignment({ template_id: '', staff_id: '', store_id: selectedStore?.id || '', scheduled_date: '', custom_deadline: '' })
+            setCustomTemplate({
+                title: '',
+                recurrence: 'weekly',
+                target_value: 1,
+                xp_reward: 10,
+                deadline_days: 0,
+                requires_proof: false
+            })
         } catch (error: any) {
             console.error('Failed to create assignment:', error)
             const detail = error.details || error.message || 'Erro de permissão ou conexão'
@@ -387,9 +432,79 @@ export default function ConfigTasksPage() {
                                     onChange={(e) => setNewAssignment({ ...newAssignment, template_id: e.target.value })}
                                 >
                                     <option value="" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">Selecione um modelo</option>
+                                    <option value="CUSTOM" className="bg-zaia-500/10 text-zaia-600 font-bold">--- Criar Tarefa Personalizada ---</option>
                                     {templates.map(t => <option key={t.id} value={t.id} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{t.title} ({t.recurrence})</option>)}
                                 </select>
                             </div>
+
+                            {newAssignment.template_id === 'CUSTOM' && (
+                                <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 space-y-3 animate-in slide-in-from-top-2 duration-200">
+                                    <div>
+                                        <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Título da Tarefa</label>
+                                        <input
+                                            type="text"
+                                            className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                            placeholder="Ex: Entrega de Brinde Especial"
+                                            value={customTemplate.title}
+                                            onChange={(e) => setCustomTemplate({ ...customTemplate, title: e.target.value })}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Recorrência</label>
+                                            <select
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                                value={customTemplate.recurrence}
+                                                onChange={(e) => setCustomTemplate({ ...customTemplate, recurrence: e.target.value as any })}
+                                            >
+                                                <option value="daily">Diária</option>
+                                                <option value="weekly">Semanal</option>
+                                                <option value="monthly">Mensal</option>
+                                                <option value="once">Única</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Valor Meta</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                                value={customTemplate.target_value}
+                                                onChange={(e) => setCustomTemplate({ ...customTemplate, target_value: parseInt(e.target.value) || 1 })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">XP Recompensa</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                                value={customTemplate.xp_reward}
+                                                onChange={(e) => setCustomTemplate({ ...customTemplate, xp_reward: parseInt(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[10px] font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Prazo (Dias)</label>
+                                            <input
+                                                type="number"
+                                                className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-lg px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-zaia-500"
+                                                value={customTemplate.deadline_days}
+                                                onChange={(e) => setCustomTemplate({ ...customTemplate, deadline_days: parseInt(e.target.value) || 0 })}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="custom_requires_proof"
+                                            checked={customTemplate.requires_proof}
+                                            onChange={(e) => setCustomTemplate({ ...customTemplate, requires_proof: e.target.checked })}
+                                            className="w-3.5 h-3.5 text-zaia-600 border-slate-300 rounded focus:ring-zaia-500"
+                                        />
+                                        <label htmlFor="custom_requires_proof" className="text-[11px] text-slate-600 dark:text-slate-300 font-medium">Exigir prova (observação/anexo)</label>
+                                    </div>
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-1">Loja</label>
                                 <select
