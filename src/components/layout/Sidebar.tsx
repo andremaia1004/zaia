@@ -22,14 +22,14 @@ const navItems = [
             { name: 'Minha Semana', href: '/tasks/my-week' },
             { name: 'Calendário', href: '/tasks/calendar' },
             { name: 'Ranking', href: '/tasks/ranking', roles: ['super_admin'] },
-            { name: 'Configurações', href: '/tasks/config', roles: ['super_admin', 'admin'] },
+            { name: 'Configurações', href: '/tasks/config', roles: ['super_admin', 'store_admin'] },
         ]
     },
     { name: 'Clientes', href: '/clients', icon: Users },
     { name: 'Profissionais', href: '/professionals', icon: Briefcase, roles: ['super_admin'] },
     { name: 'Pipeline', href: '/leads', icon: Layers },
     { name: 'Relatórios', href: '/reports', icon: TrendingUp, roles: ['super_admin'] },
-    { name: 'Configurações', href: '/settings', icon: Settings, roles: ['super_admin', 'admin'] },
+    { name: 'Configurações', href: '/settings', icon: Settings, roles: ['super_admin', 'store_admin'] },
 ]
 
 interface SidebarProps {
