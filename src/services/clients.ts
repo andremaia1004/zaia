@@ -40,6 +40,22 @@ export const clientService = {
             .single()
 
         if (error) throw error
-        return data
+        return data as Client
+    },
+
+    async upsert(client: Partial<Client>) {
+        const supabase = createClient()
+        // Needs phone and store_id for the conflict check
+        const { data, error } = await supabase
+            .from('clients')
+            .upsert(client, {
+                onConflict: 'phone,store_id',
+                ignoreDuplicates: false
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+        return data as Client
     }
 }

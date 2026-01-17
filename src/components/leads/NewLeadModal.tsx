@@ -45,56 +45,47 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
 
             const supabase = createClient()
 
-            // 1. Create or Find Client
-            // Search globally for the phone to avoid unique constraint violations
+            // 1. Create or Find Client (Optimized into 1 call)
             let clientId = ''
-            const existingClient = await clientService.getByPhone(formData.phone)
-
-            if (existingClient) {
-                // If it's a super_admin or belongs to the same store, we found it.
-                // If it belongs to another store, the DB will still block the insert later
-                // unless we fix the constraint. But checking here prevents simple duplicates.
-                clientId = existingClient.id
-            } else {
-                // Create new client
-                try {
-                    const newClient = await clientService.create({
-                        name: formData.name,
-                        phone: formData.phone,
-                        store_id: targetStoreId
-                    })
-                    clientId = newClient.id
-                } catch (clientError: any) {
-                    if (clientError.code === '23505') {
-                        throw new Error('Este telefone já está cadastrado em outra unidade ou registro.')
-                    }
-                    throw clientError
+            try {
+                const client = await clientService.upsert({
+                    name: formData.name,
+                    phone: formData.phone,
+                    store_id: targetStoreId
+                })
+                clientId = client.id
+            } catch (clientError: any) {
+                // Handle case where phone exists in another store if constraint wasn't perfectly fixed
+                if (clientError.code === '23505') {
+                    throw new Error('Este telefone já está cadastrado em outra unidade.')
                 }
+                throw clientError
             }
 
-            // 2. Create Lead
-            const { data: lead, error: leadError } = await leadService.create({
+            // 2. Parallel Creation (Lead + Optional Appointment)
+            const promises: Promise<any>[] = []
+
+            promises.push(leadService.create({
                 client_id: clientId,
                 store_id: targetStoreId,
                 status: formData.scheduleAppointment ? 'AGENDADO' : 'NOVO',
                 channel: formData.channel,
                 interest: formData.interest,
                 notes: formData.notes
-            })
+            }))
 
-            // 3. (Optional) Create Appointment
             if (formData.scheduleAppointment && formData.appointmentDate) {
-                // Defaulting to 09:00 since user doesn't want to specify time
                 const dateTime = `${formData.appointmentDate}T09:00:00`
-
-                await appointmentService.create({
+                promises.push(appointmentService.create({
                     client_id: clientId,
                     store_id: targetStoreId,
                     date: dateTime,
                     status: 'AGENDADO',
                     notes: `Agendamento via Novo Lead. Interesse: ${formData.interest}`
-                })
+                }))
             }
+
+            await Promise.all(promises)
 
             toast.success('Lead cadastrado com sucesso!')
             onSuccess()
