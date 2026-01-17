@@ -47,47 +47,52 @@ export default function DashboardPage() {
 
         try {
             const targetStoreId = selectedStore?.id || profile?.store_id
-            const data = await appointmentService.getByDateRange(start, end, targetStoreId)
+            if (!targetStoreId) return
 
-            // 1. Calculate KPIs (Same logic, new range)
-            const scheduled = data.filter(a => a.status === 'AGENDADO').length
-            const attended = data.filter(a => a.status === 'COMPARECEU').length
-            const missed = data.filter(a => a.status === 'FALTOU').length
-            const salesData = data.filter(a => a.result === 'COMPROU')
-            const sales = salesData.length
-
-            const revenue = salesData.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0)
-            const averageTicket = sales > 0 ? revenue / sales : 0
-
-            const finished = attended + missed
-            const attendanceRate = finished > 0 ? (attended / finished) * 100 : 0
-
-            const conversion = attended > 0 ? (sales / attended) * 100 : 0
-
-            setMetrics({
-                scheduled, attended, missed, sales, conversion, revenue, averageTicket, attendanceRate,
-                taskCompletion: 0, totalTasks: 0, completedTasks: 0
+            // 1. Fetch Consolidated Data via RPC (Fastest way)
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_metrics', {
+                p_store_id: targetStoreId,
+                p_start_date: start,
+                p_end_date: end
             })
 
-            // 2. Prepare Chart Data (Daily Activity for Selected Range)
+            if (rpcError) throw rpcError
+
+            const { metrics: dbMetrics, ranking } = rpcData
+
+            // 2. Fetch Detailed Appointment List (for charts and upcoming)
+            const appointments = await appointmentService.getByDateRange(start, end, targetStoreId)
+
+            // 3. Process KPIs
+            const finished = dbMetrics.attended + dbMetrics.missed
+            const attendanceRate = finished > 0 ? (dbMetrics.attended / finished) * 100 : 0
+            const conversion = dbMetrics.attended > 0 ? (dbMetrics.sales / dbMetrics.attended) * 100 : 0
+            const averageTicket = dbMetrics.sales > 0 ? dbMetrics.revenue / dbMetrics.sales : 0
+
+            setMetrics({
+                ...dbMetrics,
+                averageTicket,
+                attendanceRate,
+                conversion,
+                taskCompletion: dbMetrics.totalTasks > 0 ? (dbMetrics.completedTasks / dbMetrics.totalTasks) * 100 : 0
+            })
+
+            // 4. Prepare Chart Data (Daily Activity)
             const daysInInterval = eachDayOfInterval({
                 start: new Date(start + 'T12:00:00'),
                 end: new Date(end + 'T12:00:00')
             })
 
-            const daysMap = daysInInterval.map(d => {
-                return {
-                    name: format(d, 'dd'),
-                    fullDate: format(d, 'dd/MM'),
-                    date: format(d, 'yyyy-MM-dd'),
-                    appointments: 0,
-                    revenue: 0
-                }
-            })
+            const daysMap = daysInInterval.map(d => ({
+                name: format(d, 'dd'),
+                fullDate: format(d, 'dd/MM'),
+                date: format(d, 'yyyy-MM-dd'),
+                appointments: 0,
+                revenue: 0
+            }))
 
-            data.forEach(app => {
-                const appDate = app.date
-                const dayEntry = daysMap.find(d => d.date === appDate)
+            appointments.forEach(app => {
+                const dayEntry = daysMap.find(d => d.date === app.date)
                 if (dayEntry) {
                     dayEntry.appointments += 1
                     if (app.result === 'COMPROU') {
@@ -95,65 +100,18 @@ export default function DashboardPage() {
                     }
                 }
             })
-
             setDailyData(daysMap)
 
-            // 3. Next Appointments
+            // 5. Next Appointments (Upcoming)
             const today = new Date().toISOString().split('T')[0]
-            const upcoming = data
+            const upcoming = appointments
                 .filter(a => a.status === 'AGENDADO' && a.date >= today)
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                 .slice(0, 5)
-
             setNextAppointments(upcoming)
 
-            // 4. Fetch Task Metrics
-            const { data: taskData } = await supabase
-                .from('task_occurrences')
-                .select('status')
-                .eq('store_id', targetStoreId)
-                .gte('date', start)
-                .lte('date', end)
-
-            const totalTasks = taskData?.length || 0
-            const completedTasks = taskData?.filter((t: any) => t.status === 'FEITA').length || 0
-            const taskCompletion = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
-
-            setMetrics(prev => ({ ...prev, totalTasks, completedTasks, taskCompletion }))
-
-            // 5. Fetch Top Ranking
-            const { data: occData } = await supabase
-                .from('task_occurrences')
-                .select('staff_id, xp_reward')
-                .eq('status', 'FEITA')
-                .eq('store_id', targetStoreId)
-                .gte('date', start)
-                .lte('date', end)
-
-            if (occData) {
-                const scores = occData.reduce((acc: any, curr: any) => {
-                    acc[curr.staff_id] = (acc[curr.staff_id] || 0) + (curr.xp_reward || 0)
-                    return acc
-                }, {})
-
-                const sortedScores = Object.entries(scores)
-                    .sort(([, a]: any, [, b]: any) => b - a)
-                    .slice(0, 3)
-
-                const staffIds = sortedScores.map(([id]) => id)
-                const { data: profiles } = await supabase
-                    .from('profiles')
-                    .select('id, name')
-                    .in('id', staffIds)
-
-                const rankingWithNames = sortedScores.map(([id, score]: any) => ({
-                    id,
-                    score,
-                    name: profiles?.find((p: any) => p.id === id)?.name || 'Usuário'
-                }))
-
-                setTopRanking(rankingWithNames)
-            }
+            // 6. Set Ranking from RPC
+            setTopRanking(ranking)
 
         } catch (error) {
             console.error("Failed to fetch dashboard data", error)
