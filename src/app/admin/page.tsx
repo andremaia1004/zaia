@@ -231,7 +231,7 @@ export default function AdminDashboard() {
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
-                                    formatter={(val: any) => [Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
+                                    formatter={(val: number | undefined) => [Number(val || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 'Faturamento']}
                                 />
                                 <Area type="monotone" dataKey="revenue" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#colorRev)" />
                             </AreaChart>
@@ -255,8 +255,9 @@ export default function AdminDashboard() {
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
-                                    formatter={(val: any) => {
-                                        const value = Number(val);
+                                    formatter={(val: number | string | undefined) => {
+                                        if (val === undefined) return '0';
+                                        const value = typeof val === 'string' ? Number(val) : val;
                                         return !isNaN(value)
                                             ? value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
                                             : val;
@@ -282,7 +283,7 @@ export default function AdminDashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                             <RePieChart>
                                 <Pie
-                                    data={storePerformance as any[]}
+                                    data={storePerformance as any}
                                     dataKey="appointments"
                                     nameKey="name"
                                     cx="50%"
@@ -531,7 +532,16 @@ export default function AdminDashboard() {
     )
 }
 
-function MetricCard({ title, value, icon: Icon, color, bg, subtext }: any) {
+interface MetricCardProps {
+    title: string
+    value: string | number
+    icon: React.ElementType
+    color: string
+    bg: string
+    subtext?: string
+}
+
+function MetricCard({ title, value, icon: Icon, color, bg, subtext }: MetricCardProps) {
     return (
         <div className="glass-card p-5 relative overflow-hidden group hover:scale-[1.02] transition-transform duration-300 border border-white/5">
             <div className={`absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity`}>

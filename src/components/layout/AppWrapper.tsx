@@ -8,7 +8,7 @@ import { Menu } from 'lucide-react'
 export default function AppWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-    const isPublicPage = pathname === '/login' || pathname === '/setup'
+    const isPublicPage = ['/login', '/setup', '/signup', '/forgot-password', '/reset-password'].includes(pathname)
 
     if (isPublicPage) {
         return <main className="w-full">{children}</main>

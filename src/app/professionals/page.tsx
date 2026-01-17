@@ -59,10 +59,9 @@ export default function ProfessionalsPage() {
             fetchProfessionals()
             setFormData({ name: '', role: 'Optometrista', phone: '', email: '', active: true })
             setEditingId(null)
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Error creating/updating professional:', error)
-            // Safely alert the error message if available
-            const msg = error?.message || error?.error_description || 'Erro ao salvar profissional'
+            const msg = error instanceof Error ? error.message : 'Erro ao salvar profissional'
             alert(`Erro: ${msg}`)
         }
     }

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, subMonths } from 'date-fns'
+import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { appointmentService } from '@/services/appointments'
 import { type Appointment } from '@/services/types'
@@ -8,7 +8,7 @@ import { DollarSign, TrendingUp, Calendar, ShoppingBag } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 export default function ReportsPage() {
-    const { selectedStore } = useAuth()
+    const { selectedStore, profile } = useAuth()
     const [dateRange, setDateRange] = useState({
         start: format(startOfMonth(new Date()), 'yyyy-MM-dd'),
         end: format(endOfMonth(new Date()), 'yyyy-MM-dd')
@@ -29,7 +29,8 @@ export default function ReportsPage() {
     const fetchData = async () => {
         setLoading(true)
         try {
-            const data = await appointmentService.getByDateRange(dateRange.start, dateRange.end, selectedStore?.id)
+            const targetStoreId = selectedStore?.id || profile?.store_id
+            const data = await appointmentService.getByDateRange(dateRange.start, dateRange.end, targetStoreId)
             setAppointments(data)
             calculateMetrics(data)
         } catch (error) {
@@ -140,7 +141,7 @@ export default function ReportsPage() {
                                     .map(a => (
                                         <tr key={a.id} className="hover:bg-white/5 transition-colors">
                                             <td className="py-3 pl-4 text-slate-300">
-                                                {format(new Date(a.date), 'dd/MM/yyyy')}
+                                                {format(new Date(a.date + 'T12:00:00'), 'dd/MM/yyyy')}
                                             </td>
                                             <td className="py-3 text-white font-medium">{a.client?.name}</td>
                                             <td className="py-3 text-slate-400">{a.professional?.name}</td>
@@ -158,7 +159,15 @@ export default function ReportsPage() {
     )
 }
 
-function MetricCard({ title, value, icon: Icon, color, bg }: any) {
+interface MetricCardProps {
+    title: string
+    value: string | number
+    icon: React.ElementType
+    color: string
+    bg: string
+}
+
+function MetricCard({ title, value, icon: Icon, color, bg }: MetricCardProps) {
     return (
         <div className="glass-card p-5 flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bg} ${color}`}>

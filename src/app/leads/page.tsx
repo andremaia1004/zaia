@@ -54,7 +54,7 @@ export default function LeadsPage() {
     }
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
         useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     )
 
@@ -174,6 +174,12 @@ export default function LeadsPage() {
                 isOpen={isAppointmentModalOpen}
                 onClose={() => {
                     setIsAppointmentModalOpen(false)
+                    // Revert local UI state if cancelled
+                    if (convertingLead) {
+                        setItems(prev => prev.map(item =>
+                            item.id === convertingLead.id ? convertingLead : item
+                        ))
+                    }
                     setConvertingLead(null)
                 }}
                 onSuccess={() => {

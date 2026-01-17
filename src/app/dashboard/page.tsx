@@ -71,8 +71,8 @@ export default function DashboardPage() {
 
             // 2. Prepare Chart Data (Daily Activity for Selected Range)
             const daysInInterval = eachDayOfInterval({
-                start: new Date(start + 'T00:00:00'),
-                end: new Date(end + 'T23:59:59')
+                start: new Date(start + 'T12:00:00'),
+                end: new Date(end + 'T12:00:00')
             })
 
             const daysMap = daysInInterval.map(d => {
@@ -331,7 +331,7 @@ export default function DashboardPage() {
                                             <div>
                                                 <p className="font-medium text-white text-sm">{app.client?.name}</p>
                                                 <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                                    <span>{format(new Date(app.date), 'dd/MM')}</span>
+                                                    <span>{format(new Date(app.date + 'T12:00:00'), 'dd/MM')}</span>
                                                     <span>•</span>
                                                     <span>{app.professional?.name?.split(' ')[0]}</span>
                                                 </div>
