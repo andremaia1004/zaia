@@ -9,6 +9,9 @@ import { Loader2, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { clientService } from '@/services/clients'
+import { professionalService } from '@/services/professionals'
+import { type Professional } from '@/services/types'
+import { useEffect } from 'react'
 
 interface NewLeadModalProps {
     isOpen: boolean
@@ -26,8 +29,28 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
         interest: '',
         notes: '',
         scheduleAppointment: false,
-        appointmentDate: ''
+        appointmentDate: '',
+        professionalId: ''
     })
+    const [professionals, setProfessionals] = useState<Professional[]>([])
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchProfessionals()
+        }
+    }, [isOpen, selectedStore, profile])
+
+    const fetchProfessionals = async () => {
+        const targetStoreId = selectedStore?.id || profile?.store_id
+        if (targetStoreId || profile?.role === 'super_admin') {
+            const data = await professionalService.getAllActive(targetStoreId)
+            setProfessionals(data)
+            // Auto-select first if available
+            if (data.length > 0) {
+                setFormData(prev => ({ ...prev, professionalId: data[0].id }))
+            }
+        }
+    }
 
     const handleChange = (field: string, value: any) => {
         setFormData(prev => ({ ...prev, [field]: value }))
@@ -75,9 +98,13 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             }))
 
             if (formData.scheduleAppointment && formData.appointmentDate) {
+                if (!formData.professionalId) {
+                    throw new Error('Por favor, selecione um profissional para o agendamento.')
+                }
                 const dateTime = `${formData.appointmentDate}T09:00:00`
                 promises.push(appointmentService.create({
                     client_id: clientId,
+                    professional_id: formData.professionalId,
                     store_id: targetStoreId,
                     date: dateTime,
                     status: 'AGENDADO',
@@ -92,7 +119,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             onClose()
             setFormData({
                 name: '', phone: '', channel: 'Whatsapp', interest: '', notes: '',
-                scheduleAppointment: false, appointmentDate: ''
+                scheduleAppointment: false, appointmentDate: '', professionalId: professionals[0]?.id || ''
             })
 
         } catch (error: any) {
@@ -186,7 +213,7 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                     </div>
 
                     {formData.scheduleAppointment && (
-                        <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-top-2">
+                        <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
                             <div className="space-y-1.5">
                                 <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Data</label>
                                 <input
@@ -196,6 +223,20 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
                                     value={formData.appointmentDate}
                                     onChange={e => handleChange('appointmentDate', e.target.value)}
                                 />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Profissional</label>
+                                <select
+                                    required={formData.scheduleAppointment}
+                                    className="input-field w-full"
+                                    value={formData.professionalId}
+                                    onChange={e => handleChange('professionalId', e.target.value)}
+                                >
+                                    <option value="">Selecione...</option>
+                                    {professionals.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     )}
