@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Loader2, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { clientService } from '@/services/clients'
 
 interface NewLeadModalProps {
     isOpen: boolean
@@ -45,32 +46,30 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             const supabase = createClient()
 
             // 1. Create or Find Client
-            // First check if client exists by phone
+            // Search globally for the phone to avoid unique constraint violations
             let clientId = ''
-
-            const { data: existingClient } = await supabase
-                .from('clients')
-                .select('id')
-                .eq('phone', formData.phone)
-                .eq('store_id', targetStoreId)
-                .single()
+            const existingClient = await clientService.getByPhone(formData.phone)
 
             if (existingClient) {
+                // If it's a super_admin or belongs to the same store, we found it.
+                // If it belongs to another store, the DB will still block the insert later
+                // unless we fix the constraint. But checking here prevents simple duplicates.
                 clientId = existingClient.id
             } else {
                 // Create new client
-                const { data: newClient, error: clientError } = await supabase
-                    .from('clients')
-                    .insert({
+                try {
+                    const newClient = await clientService.create({
                         name: formData.name,
                         phone: formData.phone,
                         store_id: targetStoreId
                     })
-                    .select()
-                    .single()
-
-                if (clientError) throw new Error(`Erro ao criar cliente: ${clientError.message}`)
-                clientId = newClient.id
+                    clientId = newClient.id
+                } catch (clientError: any) {
+                    if (clientError.code === '23505') {
+                        throw new Error('Este telefone já está cadastrado em outra unidade ou registro.')
+                    }
+                    throw clientError
+                }
             }
 
             // 2. Create Lead

@@ -143,12 +143,19 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 client = await clientService.getByPhone(data.client_phone)
 
                 if (!client) {
-                    client = await clientService.create({
-                        name: data.client_name,
-                        phone: data.client_phone,
-                        email: data.client_email || undefined,
-                        store_id: targetStoreId
-                    })
+                    try {
+                        client = await clientService.create({
+                            name: data.client_name,
+                            phone: data.client_phone,
+                            email: data.client_email || undefined,
+                            store_id: targetStoreId
+                        })
+                    } catch (clientError: any) {
+                        if (clientError.code === '23505') {
+                            throw new Error('Este telefone já está agendado ou cadastrado em outra unidade.')
+                        }
+                        throw clientError
+                    }
                 }
             }
 
