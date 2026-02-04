@@ -9,6 +9,7 @@ import { Loader2, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { clientService } from '@/services/clients'
+import { normalizePhone } from '@/lib/utils/phone'
 import { professionalService } from '@/services/professionals'
 import { type Professional } from '@/services/types'
 import { useEffect } from 'react'
@@ -73,16 +74,16 @@ export function NewLeadModal({ isOpen, onClose, onSuccess }: NewLeadModalProps) 
             try {
                 const client = await clientService.upsert({
                     name: formData.name,
-                    phone: formData.phone,
+                    phone: normalizePhone(formData.phone),
                     store_id: targetStoreId
                 })
                 clientId = client.id
             } catch (clientError: any) {
-                // Handle case where phone exists in another store if constraint wasn't perfectly fixed
+                console.error("Client upsert error in NewLeadModal:", clientError)
                 if (clientError.code === '23505') {
                     throw new Error('Este telefone já está cadastrado em outra unidade.')
                 }
-                throw clientError
+                throw new Error(`Erro ao processar cliente: ${clientError.message || 'Falha na conexão'}`)
             }
 
             // 2. Parallel Creation (Lead + Optional Appointment)

@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, X } from 'lucide-react'
+import { normalizePhone } from '@/lib/utils/phone'
 
 const appointmentSchema = z.object({
     date: z.string().min(1, 'Data é obrigatória'),
@@ -143,15 +144,16 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 try {
                     client = await clientService.upsert({
                         name: data.client_name,
-                        phone: data.client_phone,
+                        phone: normalizePhone(data.client_phone),
                         email: data.client_email || undefined,
                         store_id: targetStoreId
                     })
                 } catch (clientError: any) {
+                    console.error("Client upsert error:", clientError)
                     if (clientError.code === '23505') {
-                        throw new Error('Este telefone já está agendado ou cadastrado em outra unidade.')
+                        throw new Error('Este telefone já está cadastrado em outra unidade.')
                     }
-                    throw clientError
+                    throw new Error(`Erro ao salvar cliente: ${clientError.message || 'Falha desconhecida'}`)
                 }
             }
 
@@ -204,9 +206,9 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
             onSuccess()
             toast.success('Consulta agendada com sucesso!')
             onClose()
-        } catch (error) {
-            console.error(error)
-            toast.error('Erro ao agendar. Verifique os dados.')
+        } catch (error: any) {
+            console.error("Appointment save error:", error)
+            toast.error(error.message || 'Erro ao agendar. Verifique os dados.')
         } finally {
             setLoading(false)
         }

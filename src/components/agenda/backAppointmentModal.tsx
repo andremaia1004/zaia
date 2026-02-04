@@ -14,6 +14,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { useAuth } from '@/contexts/AuthContext'
 import { Search, X } from 'lucide-react'
+import { normalizePhone } from '@/lib/utils/phone'
 
 const appointmentSchema = z.object({
     date: z.string().min(1, 'Data é obrigatória'),
@@ -141,12 +142,12 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
                 client = selectedClient
             } else {
                 // 1. Search for existing client or create new
-                client = await clientService.getByPhone(data.client_phone)
+                client = await clientService.getByPhone(normalizePhone(data.client_phone))
 
                 if (!client) {
                     client = await clientService.create({
                         name: data.client_name,
-                        phone: data.client_phone,
+                        phone: normalizePhone(data.client_phone),
                         email: data.client_email || undefined,
                         store_id: targetStoreId
                     })
@@ -202,9 +203,9 @@ export function AppointmentModal({ isOpen, onClose, onSuccess, preselectedDate, 
             onSuccess()
             toast.success('Consulta agendada com sucesso!')
             onClose()
-        } catch (error) {
-            console.error(error)
-            toast.error('Erro ao agendar. Verifique os dados.')
+        } catch (error: any) {
+            console.error("Back appointment save error:", error)
+            toast.error(error.message || 'Erro ao agendar. Verifique os dados.')
         } finally {
             setLoading(false)
         }

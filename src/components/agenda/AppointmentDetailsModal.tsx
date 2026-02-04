@@ -88,9 +88,9 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
             if (newStatus === 'CANCELADO' || newStatus === 'FALTOU' || newStatus === 'AGENDADO') {
                 onClose()
             }
-        } catch (error) {
-            console.error(error)
-            alert('Erro ao atualizar status')
+        } catch (error: any) {
+            console.error("Appointment status update error:", error)
+            toast.error(error.message || 'Erro ao atualizar status')
         } finally {
             setLoading(false)
         }
@@ -109,9 +109,9 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
             onUpdate() // List updates
             toast.success('Agendamento reagendado!')
             onClose()  // Close modal as it moved
-        } catch (error) {
-            console.error(error)
-            toast.error('Erro ao remarcar')
+        } catch (error: any) {
+            console.error("Reschedule error:", error)
+            toast.error(error.message || 'Erro ao remarcar')
         } finally {
             setLoading(false)
         }
@@ -123,9 +123,9 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
             // Ensure status is 'COMPARECEU' if we are setting a result
             await appointmentService.updateStatus(appointment.id, 'COMPARECEU', newResult)
             onUpdate()
-        } catch (error) {
-            console.error(error)
-            alert('Erro ao atualizar resultado')
+        } catch (error: any) {
+            console.error("Result change error:", error)
+            toast.error(error.message || 'Erro ao atualizar resultado')
         } finally {
             setLoading(false)
         }
@@ -138,9 +138,9 @@ export function AppointmentDetailsModal({ isOpen, onClose, onUpdate, appointment
             onUpdate()
             toast.success('Observação salva!')
             onClose()
-        } catch (error) {
-            console.error(error)
-            toast.error('Erro ao salvar observação')
+        } catch (error: any) {
+            console.error("Rejection reason save error:", error)
+            toast.error(error.message || 'Erro ao salvar observação')
         } finally {
             setLoading(false)
         }

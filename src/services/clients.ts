@@ -1,14 +1,16 @@
 
 import { createClient } from '@/lib/supabase/client'
 import type { Client } from './types'
+import { normalizePhone } from '@/lib/utils/phone'
 
 export const clientService = {
     async search(query: string, storeId?: string) {
         const supabase = createClient()
+        const normalized = normalizePhone(query)
         let builder = supabase
             .from('clients')
             .select('*')
-            .or(`name.ilike.%${query}%,phone.ilike.%${query}%`)
+            .or(`name.ilike.%${query}%,phone.ilike.%${normalized}%`)
             .limit(10)
 
         if (storeId) {
@@ -26,7 +28,7 @@ export const clientService = {
         const { data } = await supabase
             .from('clients')
             .select('*')
-            .eq('phone', phone)
+            .eq('phone', normalizePhone(phone))
             .single()
         return data as Client | null
     },
@@ -35,7 +37,10 @@ export const clientService = {
         const supabase = createClient()
         const { data, error } = await supabase
             .from('clients')
-            .insert(client)
+            .insert({
+                ...client,
+                phone: client.phone ? normalizePhone(client.phone) : undefined
+            })
             .select()
             .single()
 
@@ -48,7 +53,10 @@ export const clientService = {
         // Needs phone and store_id for the conflict check
         const { data, error } = await supabase
             .from('clients')
-            .upsert(client, {
+            .upsert({
+                ...client,
+                phone: client.phone ? normalizePhone(client.phone) : undefined
+            }, {
                 onConflict: 'phone,store_id',
                 ignoreDuplicates: false
             })
