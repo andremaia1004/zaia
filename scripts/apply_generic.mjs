@@ -1,7 +1,7 @@
 
-const { Client } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import { Client } from 'pg';
+import fs from 'fs';
+import path from 'path';
 
 const client = new Client({
     connectionString: 'postgresql://postgres:postgres@127.0.0.1:5432/postgres',
@@ -9,7 +9,7 @@ const client = new Client({
 
 const sqlFile = process.argv[2];
 if (!sqlFile) {
-    console.error('Usage: node apply.js <file>');
+    console.error('Usage: node apply_generic.mjs <file>');
     process.exit(1);
 }
 
