@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { professionalService } from '@/services/professionals'
 import { type Professional } from '@/services/types'
 import { createClient } from '@/lib/supabase/client'
@@ -23,11 +23,7 @@ export default function ProfessionalsPage() {
         active: true
     })
 
-    useEffect(() => {
-        fetchProfessionals()
-    }, [selectedStore])
-
-    const fetchProfessionals = async () => {
+    const fetchProfessionals = useCallback(async () => {
         setLoading(true)
         const supabase = createClient()
         let query = supabase.from('professionals').select('*').order('name')
@@ -41,7 +37,11 @@ export default function ProfessionalsPage() {
         const { data: allData } = await query
         if (allData) setProfessionals(allData)
         setLoading(false)
-    }
+    }, [selectedStore?.id])
+
+    useEffect(() => {
+        fetchProfessionals()
+    }, [fetchProfessionals])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()

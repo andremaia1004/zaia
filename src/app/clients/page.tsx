@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { ImportClientsModal } from '@/components/clients/ImportClientsModal'
 import { Search, User, Upload } from 'lucide-react'
@@ -18,18 +18,7 @@ export default function ClientsPage() {
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedTerm, setDebouncedTerm] = useState('')
     const [isImportOpen, setIsImportOpen] = useState(false)
-    const [selectedClient, setSelectedClient] = useState<Client | null>(null)
-
-    useEffect(() => {
-        const timer = setTimeout(() => setDebouncedTerm(searchTerm), 500)
-        return () => clearTimeout(timer)
-    }, [searchTerm])
-
-    useEffect(() => {
-        searchClients()
-    }, [debouncedTerm, selectedStore, profile])
-
-    const searchClients = async () => {
+    const searchClients = useCallback(async () => {
         const targetStoreId = selectedStore?.id || profile?.store_id
 
         if (!targetStoreId && profile?.role !== 'super_admin') {
@@ -50,7 +39,16 @@ export default function ClientsPage() {
 
         const { data } = await query
         if (data) setClients(data)
-    }
+    }, [debouncedTerm, profile?.role, profile?.store_id, selectedStore?.id])
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedTerm(searchTerm), 500)
+        return () => clearTimeout(timer)
+    }, [searchTerm])
+
+    useEffect(() => {
+        searchClients()
+    }, [searchClients])
 
     return (
         <div className="space-y-6">
@@ -101,7 +99,6 @@ export default function ClientsPage() {
                             <tr
                                 key={client.id}
                                 className="hover:bg-white/5 transition-colors cursor-pointer"
-                                onClick={() => setSelectedClient(client)}
                             >
                                 <td className="p-4 flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-zaia-900/50 flex items-center justify-center text-zaia-300">
