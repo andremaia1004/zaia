@@ -52,11 +52,7 @@ export default function ConfigTasksPage() {
             const supabase = createClient()
 
             // 1. Templates
-            const templatesData = await tasksService.getTemplates()
-            if (!templatesData || templatesData.length === 0) {
-                console.warn('No task templates found')
-            }
-            setTemplates(templatesData || [])
+            const templatesPromise = tasksService.getTemplates()
 
             // 2. Staff (Profiles) - Fetch staff and store_admin since both can have tasks
             let pQuery = supabase
@@ -74,24 +70,10 @@ export default function ConfigTasksPage() {
                 pQuery = pQuery.eq('store_id', profile.store_id)
             }
 
-            const { data: profiles, error: profileError } = await pQuery
-
-            if (profileError) {
-                console.error('Error fetching profiles:', profileError.message)
-                toast.error('Erro ao carregar colaboradores')
-            }
-            setStaff(profiles || [])
-
             // 3. Stores
-            const { data: storesData, error: storesError } = await supabase
+            const storesPromise = supabase
                 .from('stores')
                 .select('id, name')
-
-            if (storesError) {
-                console.error('Error fetching stores:', storesError.message)
-                toast.error('Erro ao carregar lojas')
-            }
-            setStores(storesData || [])
 
             // 4. Assignments
             let aQuery = supabase
@@ -104,7 +86,34 @@ export default function ConfigTasksPage() {
                 aQuery = aQuery.eq('store_id', profile.store_id)
             }
 
-            const { data: assignmentsData, error: aError } = await aQuery
+            const [
+                templatesData,
+                { data: profiles, error: profileError },
+                { data: storesData, error: storesError },
+                { data: assignmentsData, error: aError }
+            ] = await Promise.all([
+                templatesPromise,
+                pQuery,
+                storesPromise,
+                aQuery
+            ])
+
+            if (!templatesData || templatesData.length === 0) {
+                console.warn('No task templates found')
+            }
+            setTemplates(templatesData || [])
+
+            if (profileError) {
+                console.error('Error fetching profiles:', profileError.message)
+                toast.error('Erro ao carregar colaboradores')
+            }
+            setStaff(profiles || [])
+
+            if (storesError) {
+                console.error('Error fetching stores:', storesError.message)
+                toast.error('Erro ao carregar lojas')
+            }
+            setStores(storesData || [])
 
             if (aError) console.error('Error fetching assignments:', aError)
             console.log('Fetched data:', {

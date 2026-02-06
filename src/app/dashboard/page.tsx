@@ -49,19 +49,19 @@ export default function DashboardPage() {
             const targetStoreId = selectedStore?.id || profile?.store_id
             if (!targetStoreId) return
 
-            // 1. Fetch Consolidated Data via RPC (Fastest way)
-            const { data: rpcData, error: rpcError } = await supabase.rpc('get_dashboard_metrics', {
-                p_store_id: targetStoreId,
-                p_start_date: start,
-                p_end_date: end
-            })
+            // 1. Fetch consolidated data and appointments in parallel
+            const [rpcResult, appointments] = await Promise.all([
+                supabase.rpc('get_dashboard_metrics', {
+                    p_store_id: targetStoreId,
+                    p_start_date: start,
+                    p_end_date: end
+                }),
+                appointmentService.getByDateRange(start, end, targetStoreId)
+            ])
 
-            if (rpcError) throw rpcError
+            if (rpcResult.error) throw rpcResult.error
 
-            const { metrics: dbMetrics, ranking } = rpcData
-
-            // 2. Fetch Detailed Appointment List (for charts and upcoming)
-            const appointments = await appointmentService.getByDateRange(start, end, targetStoreId)
+            const { metrics: dbMetrics, ranking } = rpcResult.data
 
             // 3. Process KPIs
             const finished = dbMetrics.attended + dbMetrics.missed
