@@ -29,7 +29,7 @@ export default function RankingPage() {
             // 1. Fetch ALL occurrences for the month
             let query = supabase
                 .from('task_occurrences')
-                .select('*') // No joins here to avoid error
+                .select('staff_id, store_id, status, xp_reward')
                 .gte('date', format(monthStart, 'yyyy-MM-dd'))
                 .lte('date', format(monthEnd, 'yyyy-MM-dd'))
 
@@ -47,31 +47,32 @@ export default function RankingPage() {
             const staffIds = Array.from(new Set(occurrences?.map(o => o.staff_id).filter(Boolean))) as string[]
             const storeIds = Array.from(new Set(occurrences?.map(o => o.store_id).filter(Boolean))) as string[]
 
-            // 3. Fetch Profiles (names)
-            let profilesMap: Record<string, any> = {}
-            if (staffIds.length > 0) {
-                const { data: profilesData } = await supabase
-                    .from('profiles')
-                    .select('id, name')
-                    .in('id', staffIds)
+            const [profilesResponse, storesResponse] = await Promise.all([
+                staffIds.length > 0
+                    ? supabase
+                        .from('profiles')
+                        .select('id, name')
+                        .in('id', staffIds)
+                    : Promise.resolve({ data: [] }),
+                storeIds.length > 0
+                    ? supabase
+                        .from('stores')
+                        .select('id, name')
+                        .in('id', storeIds)
+                    : Promise.resolve({ data: [] })
+            ])
 
-                profilesData?.forEach(p => {
-                    profilesMap[p.id] = p
-                })
-            }
+            // 3. Fetch Profiles (names)
+            const profilesMap: Record<string, any> = {}
+            profilesResponse.data?.forEach(p => {
+                profilesMap[p.id] = p
+            })
 
             // 4. Fetch Stores (names)
-            let storesMap: Record<string, any> = {}
-            if (storeIds.length > 0) {
-                const { data: storesData } = await supabase
-                    .from('stores')
-                    .select('id, name')
-                    .in('id', storeIds)
-
-                storesData?.forEach(s => {
-                    storesMap[s.id] = s
-                })
-            }
+            const storesMap: Record<string, any> = {}
+            storesResponse.data?.forEach(s => {
+                storesMap[s.id] = s
+            })
 
             // 5. Aggregate scores
             const staffMap = new Map()
