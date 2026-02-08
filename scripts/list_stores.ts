@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'
 import path from 'path'
+import fs from 'fs'
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
@@ -16,7 +17,6 @@ async function listStores() {
         console.error('Error fetching stores:', error)
         return
     }
-    const fs = require('fs')
     fs.writeFileSync('stores_list.json', JSON.stringify(stores, null, 2))
     console.log('Stores saved to stores_list.json')
 }

@@ -34,40 +34,48 @@ export const adminService = {
     async getGlobalMetrics(startDate: string, endDate: string) {
         const supabase = createClient()
 
-        // 1. Stores Count
-        const { count: activeStores } = await supabase
-            .from('stores')
-            .select('*', { count: 'exact', head: true })
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_global_metrics', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
 
-        // 2. Clients Count (Global)
-        const { count: totalClients } = await supabase
-            .from('clients')
-            .select('*', { count: 'exact', head: true })
+        if (!rpcError && rpcData) {
+            return rpcData as AdminGlobalMetrics
+        }
 
-        // 3. Appointments Data
-        const { data: appointments } = await supabase
-            .from('appointments')
-            .select('date, status, result, value, store_id')
-            .gte('date', startDate)
-            .lte('date', endDate)
-
-        // 4. Tasks Data (for Compliance)
-        const { data: tasks } = await supabase
-            .from('task_occurrences')
-            .select('status, xp_reward, staff_id, store_id')
-            .gte('date', startDate)
-            .lte('date', endDate)
-
-        // 5. Leads Data (for Conversion)
-        const { data: leads } = await supabase
-            .from('leads')
-            .select('status')
-            .gte('created_at', startDate)
-            .lte('created_at', `${endDate}T23:59:59`)
-
-        // 6. Profiles & Stores (for Top Performers names)
-        const { data: profiles } = await supabase.from('profiles').select('id, name')
-        const { data: stores } = await supabase.from('stores').select('id, name')
+        const [
+            { count: activeStores },
+            { count: totalClients },
+            { data: appointments },
+            { data: tasks },
+            { data: leads },
+            { data: profiles },
+            { data: stores }
+        ] = await Promise.all([
+            supabase
+                .from('stores')
+                .select('*', { count: 'exact', head: true }),
+            supabase
+                .from('clients')
+                .select('*', { count: 'exact', head: true }),
+            supabase
+                .from('appointments')
+                .select('date, status, result, value, store_id')
+                .gte('date', startDate)
+                .lte('date', endDate),
+            supabase
+                .from('task_occurrences')
+                .select('status, xp_reward, staff_id, store_id')
+                .gte('date', startDate)
+                .lte('date', endDate),
+            supabase
+                .from('leads')
+                .select('status')
+                .gte('created_at', startDate)
+                .lte('created_at', `${endDate}T23:59:59`),
+            supabase.from('profiles').select('id, name'),
+            supabase.from('stores').select('id, name')
+        ])
 
         // Process Metrics
         const apps = appointments || []
@@ -144,20 +152,28 @@ export const adminService = {
     async getStorePerformance(startDate: string, endDate: string) {
         const supabase = createClient()
 
-        // Get all stores
-        const { data: stores } = await supabase
-            .from('stores')
-            .select('id, name, slug')
-            .order('name')
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_store_performance', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
+
+        if (!rpcError && rpcData) {
+            return rpcData as StorePerformance[]
+        }
+
+        const [{ data: stores }, { data: appointments }] = await Promise.all([
+            supabase
+                .from('stores')
+                .select('id, name, slug')
+                .order('name'),
+            supabase
+                .from('appointments')
+                .select('store_id, status, result, value')
+                .gte('date', startDate)
+                .lte('date', endDate)
+        ])
 
         if (!stores) return []
-
-        // Get appointments for period
-        const { data: appointments } = await supabase
-            .from('appointments')
-            .select('store_id, status, result, value')
-            .gte('date', startDate)
-            .lte('date', endDate)
 
         if (!appointments) return []
 
