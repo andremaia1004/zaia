@@ -34,6 +34,15 @@ export const adminService = {
     async getGlobalMetrics(startDate: string, endDate: string) {
         const supabase = createClient()
 
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_global_metrics', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
+
+        if (!rpcError && rpcData) {
+            return rpcData as AdminGlobalMetrics
+        }
+
         const [
             { count: activeStores },
             { count: totalClients },
@@ -142,6 +151,15 @@ export const adminService = {
 
     async getStorePerformance(startDate: string, endDate: string) {
         const supabase = createClient()
+
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_store_performance', {
+            p_start_date: startDate,
+            p_end_date: endDate
+        })
+
+        if (!rpcError && rpcData) {
+            return rpcData as StorePerformance[]
+        }
 
         const [{ data: stores }, { data: appointments }] = await Promise.all([
             supabase

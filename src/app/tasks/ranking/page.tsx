@@ -26,6 +26,29 @@ export default function RankingPage() {
             setLoading(true)
             const supabase = createClient()
 
+            const rpcStoreId = selectedStore?.id || (profile?.role === 'store_admin' ? profile.store_id : null)
+            const { data: rpcData, error: rpcError } = await supabase.rpc('get_task_ranking', {
+                p_start_date: format(monthStart, 'yyyy-MM-dd'),
+                p_end_date: format(monthEnd, 'yyyy-MM-dd'),
+                p_store_id: rpcStoreId
+            })
+
+            if (!rpcError && rpcData && rpcData.length > 0) {
+                const normalized = rpcData.map((row: any) => ({
+                    id: row.staff_id,
+                    profiles: { name: row.staff_name || 'Desconhecido' },
+                    stores: { name: row.store_name || '-' },
+                    total_xp: row.total_xp || 0,
+                    tasks_total: row.tasks_total || 0,
+                    tasks_done: row.tasks_done || 0,
+                    tasks_postponed: row.tasks_postponed || 0,
+                    tasks_delayed: row.tasks_delayed || 0,
+                    execution_rate: row.execution_rate || 0
+                }))
+                setScores(normalized)
+                return
+            }
+
             // 1. Fetch ALL occurrences for the month
             let query = supabase
                 .from('task_occurrences')
